@@ -1,0 +1,46 @@
+{
+  "annotations": {
+    "changelogDate": "20250713091900"
+  },
+  "applications": "*",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "id",
+      "fieldType": "Long",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "articleId",
+      "fieldType": "Long",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "userId",
+      "fieldType": "Long",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "content",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "parentCommentId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "topCommentId",
+      "fieldType": "Long"
+    },
+    {
+      "fieldName": "deleted",
+      "fieldType": "Integer"
+    }
+  ],
+  "name": "Comment",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}
