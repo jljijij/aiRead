@@ -41,7 +41,6 @@ public class CommentService {
         CommentRepository commentRepository,
         CommentMapper commentMapper,
         UserFootService userFootService,
-        UserService userService,
         UserRepository userRepository
     ) {
         this.commentRepository = commentRepository;
@@ -217,7 +216,7 @@ public class CommentService {
         comment.setPraiseCount(praiseCount.intValue());
 
         // 查询当前登录用于是否点赞过
-        Long loginUserId = SecurityUtils.getCurrentUserId().get();
+        Long loginUserId = SecurityUtils.getCurrentUserId().orElse(null);
         if (loginUserId != null) {
             // 判断当前用户是否点过赞
             UserFootDTO foot = userFootService.queryUserFoot(comment.getCommentId(), DocumentTypeEnum.COMMENT.getCode(), loginUserId);

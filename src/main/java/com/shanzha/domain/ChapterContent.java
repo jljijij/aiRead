@@ -17,6 +17,10 @@ public class ChapterContent implements Serializable {
     @ManyToOne
     private Chapter chapter;
 
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
     public Long getId() {
         return id;
     }
@@ -31,5 +35,13 @@ public class ChapterContent implements Serializable {
 
     public void setChapter(Chapter chapter) {
         this.chapter = chapter;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

@@ -4,20 +4,17 @@ import jakarta.persistence.*;
 import java.io.Serializable;
 
 /**
- * A Chapter.
+ * A Novel.
  */
 @Entity
-@Table(name = "chapter")
-public class Chapter implements Serializable {
+@Table(name = "novel")
+public class Novel implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String title;
-
-    @ManyToOne
-    private Novel novel;
 
     public Long getId() {
         return id;
@@ -33,13 +30,5 @@ public class Chapter implements Serializable {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public Novel getNovel() {
-        return novel;
-    }
-
-    public void setNovel(Novel novel) {
-        this.novel = novel;
     }
 }

@@ -7,6 +7,8 @@ import jakarta.annotation.PostConstruct;
 import java.util.Objects;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RedissonClient;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,5 +37,27 @@ public class ChapterContentService {
             .map(Chapter::getId)
             .filter(Objects::nonNull)
             .forEach(bloomFilter::add);
+    }
+
+    @Cacheable(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#id")
+    public ChapterContent findOne(Long id) {
+        return chapterContentRepository.findById(id).orElse(null);
+    }
+
+    @CacheEvict(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#result.id", condition = "#result != null")
+    public ChapterContent save(ChapterContent chapterContent) {
+        if (chapterContent.getChapter() != null && chapterContent.getChapter().getId() != null) {
+            bloomFilter.add(chapterContent.getChapter().getId());
+        }
+        return chapterContentRepository.save(chapterContent);
+    }
+
+    @CacheEvict(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#id")
+    public void delete(Long id) {
+        chapterContentRepository.deleteById(id);
+    }
+
+    public java.util.List<ChapterContent> findAll() {
+        return chapterContentRepository.findAll();
     }
 }

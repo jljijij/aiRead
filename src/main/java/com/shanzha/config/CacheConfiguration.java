@@ -90,6 +90,10 @@ public class CacheConfiguration {
             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Novel.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Coupon.class.getName(), jcacheConfiguration);
             // jhipster-needle-redis-add-entry
         };
     }
