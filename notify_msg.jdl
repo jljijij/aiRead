@@ -1,0 +1,15 @@
+entity NotifyMsg {
+  relatedId String required,
+  relatedInfo String,
+  operateUserId Long required,
+  operateUserName String,
+  operateUserPhoto String,
+  type Integer required,
+  msg String,
+  state Integer required,
+  createTime Instant
+}
+
+dto NotifyMsg with mapstruct
+paginate NotifyMsg with pagination
+service NotifyMsg with serviceClass

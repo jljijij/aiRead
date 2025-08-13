@@ -1,0 +1,47 @@
+                               // ========= 用户-章节权限 =========
+entity ChapterPermission {
+  userId Long required,
+  chapterId Long required,
+  canRead Boolean required,
+  canDownload Boolean,
+  canComment Boolean
+}
+
+// ========= 章节包 =========
+entity ChapterPackage {
+  name String required,
+  description String,
+  createdAt Instant
+}
+
+entity ChapterPackageItem {
+  packageId Long required,
+  chapterId Long required
+}
+
+// ========= 优惠券 =========
+entity Coupon {
+  code String required,
+  expiredAt Instant required,
+  type CouponType required,
+  novelId Long required,      // ← 新增字段
+  used Boolean,
+  chapterId Long,
+  packageId Long
+}
+
+enum CouponType {
+  FREE_CHAPTER, FREE_PACKAGE
+}
+
+// ========= 用户-优惠券 =========
+entity UserCoupon {
+  userId Long required,
+  couponId Long required,
+  usedAt Instant
+}
+
+// ========= 生成策略 =========
+dto ChapterPermission, ChapterPackage, ChapterPackageItem, Coupon, UserCoupon with mapstruct
+service ChapterPermission, ChapterPackage, ChapterPackageItem, Coupon, UserCoupon with serviceClass
+paginate ChapterPermission, ChapterPackage, ChapterPackageItem, Coupon, UserCoupon with pagination

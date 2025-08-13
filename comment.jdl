@@ -1,0 +1,13 @@
+entity Comment {
+  id Long required,                 // 👈 显式声明主键
+  articleId Long required,
+  userId Long required,
+  content String required,
+  parentCommentId Long,
+  topCommentId Long,
+  deleted Integer
+}
+
+dto Comment with mapstruct
+service Comment with serviceClass
+paginate Comment with pagination

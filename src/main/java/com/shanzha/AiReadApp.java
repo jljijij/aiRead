@@ -2,6 +2,7 @@ package com.shanzha;
 
 import com.shanzha.config.ApplicationProperties;
 import com.shanzha.config.CRLFLogConverter;
+import com.shanzha.config.DeepSeekConf;
 import jakarta.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -9,18 +10,22 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.liquibase.LiquibaseProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import tech.jhipster.config.DefaultProfileUtil;
 import tech.jhipster.config.JHipsterConstants;
+import tech.jhipster.config.JHipsterProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties({ LiquibaseProperties.class, ApplicationProperties.class })
+@Import(RocketMQAutoConfiguration.class)
+@EnableConfigurationProperties({ LiquibaseProperties.class, ApplicationProperties.class, DeepSeekConf.class })
 public class AiReadApp {
 
     private static final Logger LOG = LoggerFactory.getLogger(AiReadApp.class);

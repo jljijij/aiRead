@@ -1,0 +1,11 @@
+id;user_id;chapter_id;can_read;can_download;can_comment
+1;1723;23454;false;true;true
+2;8215;14673;false;false;false
+3;1874;6357;false;false;false
+4;12816;29928;true;false;true
+5;22355;15161;true;false;true
+6;2121;21707;true;true;false
+7;12109;31233;true;false;true
+8;1703;17973;true;false;false
+9;7908;17205;true;false;false
+10;22248;1630;true;true;true

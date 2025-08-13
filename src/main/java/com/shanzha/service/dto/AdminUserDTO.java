@@ -4,6 +4,8 @@ import com.shanzha.config.Constants;
 import com.shanzha.domain.Authority;
 import com.shanzha.domain.User;
 import jakarta.validation.constraints.*;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.stream.Collectors;
 /**
  * A DTO representing a user, with his authorities.
  */
+@Data
 public class AdminUserDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;

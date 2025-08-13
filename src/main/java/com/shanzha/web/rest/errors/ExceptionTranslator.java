@@ -86,23 +86,37 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
     }
 
     private ProblemDetailWithCause getProblemDetailWithCause(Throwable ex) {
-        if (ex instanceof com.shanzha.service.UsernameAlreadyUsedException) return (ProblemDetailWithCause) new LoginAlreadyUsedException()
+        if (ex instanceof com.shanzha.service.UsernameAlreadyUsedException) {
+            return (ProblemDetailWithCause) new LoginAlreadyUsedException()
             .getBody();
-        if (ex instanceof com.shanzha.service.EmailAlreadyUsedException) return (ProblemDetailWithCause) new EmailAlreadyUsedException()
+        }
+
+        if (ex instanceof com.shanzha.service.EmailAlreadyUsedException) {
+            return (ProblemDetailWithCause) new EmailAlreadyUsedException()
             .getBody();
-        if (ex instanceof com.shanzha.service.InvalidPasswordException) return (ProblemDetailWithCause) new InvalidPasswordException()
+        }
+
+        if (ex instanceof com.shanzha.service.InvalidPasswordException) {
+            return (ProblemDetailWithCause) new InvalidPasswordException()
             .getBody();
+        }
 
         if (
             ex instanceof ErrorResponseException exp && exp.getBody() instanceof ProblemDetailWithCause problemDetailWithCause
-        ) return problemDetailWithCause;
+        ) {
+            return problemDetailWithCause;
+        }
         return ProblemDetailWithCauseBuilder.instance().withStatus(toStatus(ex).value()).build();
     }
 
     protected ProblemDetailWithCause customizeProblem(ProblemDetailWithCause problem, Throwable err, NativeWebRequest request) {
-        if (problem.getStatus() <= 0) problem.setStatus(toStatus(err));
+        if (problem.getStatus() <= 0) {
+            problem.setStatus(toStatus(err));
+        }
 
-        if (problem.getType() == null || problem.getType().equals(URI.create("about:blank"))) problem.setType(getMappedType(err));
+        if (problem.getType() == null || problem.getType().equals(URI.create("about:blank"))) {
+            problem.setType(getMappedType(err));
+        }
 
         // higher precedence to Custom/ResponseStatus types
         String title = extractTitle(err, problem.getStatus());
@@ -122,12 +136,16 @@ public class ExceptionTranslator extends ResponseEntityExceptionHandler {
             getMappedMessageKey(err) != null ? getMappedMessageKey(err) : "error.http." + problem.getStatus()
         );
 
-        if (problemProperties == null || !problemProperties.containsKey(PATH_KEY)) problem.setProperty(PATH_KEY, getPathValue(request));
+        if (problemProperties == null || !problemProperties.containsKey(PATH_KEY)) {
+            problem.setProperty(PATH_KEY, getPathValue(request));
+        }
 
         if (
             (err instanceof MethodArgumentNotValidException fieldException) &&
             (problemProperties == null || !problemProperties.containsKey(FIELD_ERRORS_KEY))
-        ) problem.setProperty(FIELD_ERRORS_KEY, getFieldErrors(fieldException));
+        ) {
+            problem.setProperty(FIELD_ERRORS_KEY, getFieldErrors(fieldException));
+        }
 
         problem.setCause(buildCause(err.getCause(), request).orElse(null));
 

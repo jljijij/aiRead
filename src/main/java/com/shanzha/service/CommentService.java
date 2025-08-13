@@ -1,9 +1,9 @@
 package com.shanzha.service;
 
-import com.shanzha.domain.Comment;
-import com.shanzha.domain.User;
-import com.shanzha.domain.UserFoot;
+import cn.hutool.extra.spring.SpringUtil;
+import com.shanzha.domain.*;
 import com.shanzha.domain.enumeration.DocumentTypeEnum;
+import com.shanzha.domain.enumeration.NotifyTypeEnum;
 import com.shanzha.domain.enumeration.PraiseStatEnum;
 import com.shanzha.repository.CommentRepository;
 import com.shanzha.repository.UserRepository;
@@ -12,7 +12,11 @@ import com.shanzha.service.dto.*;
 import com.shanzha.service.mapper.CommentMapper;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import com.shanzha.utils.NumUtil;
+import com.shanzha.web.rest.errors.BusinessException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -35,19 +39,21 @@ public class CommentService {
 
     private final UserFootService userFootService;
 
+    private final RocketMQTemplate rocketMQTemplate;
     private final UserRepository userRepository;
-
+    private final NovelService novelService;
     public CommentService(
         CommentRepository commentRepository,
         CommentMapper commentMapper,
         UserFootService userFootService,
-        UserService userService,
-        UserRepository userRepository
-    ) {
+        RocketMQTemplate rocketMQTemplate, UserRepository userRepository,
+        NovelService novelService) {
         this.commentRepository = commentRepository;
         this.commentMapper = commentMapper;
         this.userFootService = userFootService;
+        this.rocketMQTemplate = rocketMQTemplate;
         this.userRepository = userRepository;
+        this.novelService = novelService;
     }
 
     /**
@@ -254,8 +260,141 @@ public class CommentService {
         fillTopCommentInfo(result);
         return result;
     }
-
     public int queryCommentCount(Long articleId) {
         return commentRepository.countByArticleIdAndDeleted(articleId, 0);
+    }
+    @Transactional(rollbackFor = Exception.class)
+    public Long saveComment(CommentSaveReq commentSaveReq) {
+        // 保存评论
+        Comment comment;
+        if (NumUtil.nullOrZero(commentSaveReq.getCommentId())) {
+            comment = addComment(commentSaveReq);
+        } else {
+            comment = updateComment(commentSaveReq);
+        }
+        return comment.getId();
+    }
+
+    private Comment addComment(CommentSaveReq commentSaveReq) {
+        // 0.获取父评论信息，校验是否存在
+        Comment parentComment = getParentCommentUser(commentSaveReq.getParentCommentId());
+        Long parentUser = parentComment == null ? null : parentComment.getUserId();
+
+        // 1. 保存评论内容
+        Comment comment = CommentMapper.toDo(commentSaveReq);
+        Date now = new Date();
+        commentRepository.save(comment);
+
+        // 2. 保存足迹信息 : 文章的已评信息 + 评论的已评信息
+        Optional<NovelDTO> novelOpt= novelService.findOne(comment.getArticleId());
+        novelOpt.ifPresent(article -> userFootService.saveCommentFoot(commentMapper.toDto(comment), article.getAuthorId(), parentUser));
+
+        // 3. 发布添加/回复评论事件
+        rocketMQTemplate.syncSend("notify:COMMENT", comment);
+        if (NumUtil.upZero(parentUser)) {
+            rocketMQTemplate.syncSend("notify:REPLY",comment);
+        }
+        return comment;
+    }
+
+    private Comment updateComment(CommentSaveReq commentSaveReq) {
+        // 更新评论
+        Comment comment = commentRepository.findById(commentSaveReq.getCommentId()).orElse(null);
+        if (comment == null) {
+            throw new BusinessException(CommonCodeMsg.COMMENT_NOT_EXIST);
+        }
+        comment.setContent(commentSaveReq.getCommentContent());
+        commentRepository.save(comment);
+
+        return comment;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteComment(Long commentId, Long userId) {
+        Comment commentDO = commentRepository.findById(commentId).orElse(null);
+        // 1.校验评论，是否越权，文章是否存在
+        if (commentDO == null) {
+            throw new BusinessException(CommonCodeMsg.COMMENT_NOT_EXIST);
+        }
+        if (Objects.equals(commentDO.getUserId(), userId)) {
+            throw new BusinessException(CommonCodeMsg.NOT_AUTH_DELETE);
+        }
+        // 获取文章信息
+        NovelDTO article = novelService.findOne(commentDO.getArticleId()).orElse(null);
+        if (article == null) {
+            throw new BusinessException(CommonCodeMsg.NOVEL_NOT_EXIST);
+        }
+
+        // 2.删除评论、足迹
+        commentDO.setDeleted(1);
+        commentRepository.save(commentDO);
+        Comment parentComment = getParentCommentUser(commentDO.getParentCommentId());
+        userFootService.removeCommentFoot(commentDO, article.getAuthorId(), parentComment == null ? null : parentComment.getUserId());
+
+        // 3. 发布删除评论事件
+        rocketMQTemplate.syncSend("notify:COMMENT", commentDO);
+        if (NumUtil.upZero(commentDO.getParentCommentId())) {
+            rocketMQTemplate.syncSend("notify:REPLY",commentDO);
+        }
+    }
+
+
+    private Comment getParentCommentUser(Long parentCommentId) {
+        if (NumUtil.nullOrZero(parentCommentId)) {
+            return null;
+        }
+        Comment parent = commentRepository.findById(parentCommentId).orElse(null);
+        if (parent == null) {
+            throw new BusinessException(CommonCodeMsg.NOT_AUTH_DELETE);
+        }
+        return parent;
+    }
+
+
+//    /**
+//     * 机器人回复
+//     *
+//     * @param comment 当前评论内容
+//     * @param parent  当前评论的父评论
+//     */
+//    private void haterBotTrigger(Comment comment, Comment parent) {
+//        boolean trigger = false;
+//        Long haterBotUserId = haterBot.getBotUser().getUserId();
+//        Long topCommentId = 0L;
+//        if (parent == null) {
+//            // 当前的评论就是顶级评论，根据回复内容是否有触发词来决定是否需要进行触发
+//            String tag = "@" + AiBotEnum.HATER_BOT.getNickName();
+//            if (comment.getContent().contains(tag)) {
+//                comment.setContent(StringUtils.replace(comment.getContent(), tag, ""));
+//                trigger = true;
+//            }
+//            topCommentId = comment.getId();
+//        } else {
+//            // 回复内容，根据回复的用户是否为机器人，来判定是否需要进行触发
+//            if (Objects.equals(haterBotUserId, parent.getUserId())) {
+//                trigger = true;
+//            }
+//            topCommentId = comment.getTopCommentId();
+//        }
+//
+//        // 评论中，@了机器人，那么开启评论对线模式
+//        if (trigger) {
+//            log.info("评论「{}」 开启了在线互怼模式", comment);
+//            // sourceBizId: 主要用于构建聊天对话，以顶级评论 + 用户id作为唯一标识
+//            // 避免出现一个顶级评论开启对线，后续的回复中有其他用户参与进来时，因为用户id不同，这样传递给大模型的上下文就不会出现交叉
+//            haterBot.trigger(comment.getContent(), "comment:" + topCommentId + "_" + comment.getUserId(), reply -> {
+//                aiReply(haterBotUserId, reply, comment);
+//            });
+//        }
+//    }
+
+    private void aiReply(Long aiUserId, String replyContent, Comment parentComment) {
+        CommentSaveReq save = new CommentSaveReq();
+        save.setArticleId(parentComment.getArticleId());
+        save.setCommentContent(replyContent);
+        save.setUserId(aiUserId);
+        save.setParentCommentId(parentComment.getId());
+        save.setTopCommentId(NumUtil.upZero(parentComment.getTopCommentId()) ? parentComment.getTopCommentId() : parentComment.getId());
+        saveComment(save);
     }
 }

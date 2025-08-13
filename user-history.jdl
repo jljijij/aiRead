@@ -1,0 +1,13 @@
+/**
+ * AI 历史消息表
+ */
+entity UserAiHistory {
+  userId Long required,
+  question String required,
+  answer String required,
+  chatId String required
+}
+
+dto UserAiHistory with mapstruct
+service UserAiHistory with serviceClass
+paginate UserAiHistory with pagination

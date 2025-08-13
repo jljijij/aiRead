@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import org.hibernate.cache.jcache.ConfigSettings;
 import org.redisson.Redisson;
 import org.redisson.config.ClusterServersConfig;
 import org.redisson.config.Config;
@@ -13,7 +12,6 @@ import org.redisson.config.SingleServerConfig;
 import org.redisson.jcache.configuration.RedissonConfiguration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.cache.annotation.EnableCaching;
@@ -35,7 +33,14 @@ public class CacheConfiguration {
     public javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration(JHipsterProperties jHipsterProperties) {
         MutableConfiguration<Object, Object> jcacheConfig = new MutableConfiguration<>();
 
-        URI redisUri = URI.create(jHipsterProperties.getCache().getRedis().getServer()[0]);
+        String[] servers = jHipsterProperties.getCache().getRedis().getServer();
+        for (int i = 0; i < servers.length; i++) {
+            if (!servers[i].startsWith("redis://") && !servers[i].startsWith("rediss://")) {
+                servers[i] = "redis://" + servers[i];
+            }
+        }
+
+        URI redisUri = URI.create(servers[0]);
 
         Config config = new Config();
         // Fix Hibernate lazy initialization https://github.com/jhipster/generator-jhipster/issues/22889
@@ -46,7 +51,7 @@ public class CacheConfiguration {
                 .setMasterConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
                 .setMasterConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
-                .addNodeAddress(jHipsterProperties.getCache().getRedis().getServer());
+                .addNodeAddress(servers);
 
             if (redisUri.getUserInfo() != null) {
                 clusterServersConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
@@ -57,7 +62,7 @@ public class CacheConfiguration {
                 .setConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
                 .setConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
-                .setAddress(jHipsterProperties.getCache().getRedis().getServer()[0]);
+                .setAddress(servers[0]);
 
             if (redisUri.getUserInfo() != null) {
                 singleServerConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
@@ -70,10 +75,10 @@ public class CacheConfiguration {
         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig);
     }
 
-    @Bean
-    public HibernatePropertiesCustomizer hibernatePropertiesCustomizer(javax.cache.CacheManager cm) {
-        return hibernateProperties -> hibernateProperties.put(ConfigSettings.CACHE_MANAGER, cm);
-    }
+    //    @Bean
+    //    public HibernatePropertiesCustomizer hibernatePropertiesCustomizer(javax.cache.CacheManager cm) {
+    //        return hibernateProperties -> hibernateProperties.put(ConfigSettings.CACHE_MANAGER, cm);
+    //    }
 
     @Bean
     public JCacheManagerCustomizer cacheManagerCustomizer(javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration) {
@@ -83,6 +88,19 @@ public class CacheConfiguration {
             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Novel.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.NovelTag.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterPermission.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Coupon.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.UserCoupon.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterPackage.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterPackageItem.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.UserFoot.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.NotifyMsg.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.UserAiHistory.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Comment.class.getName(), jcacheConfiguration);
             // jhipster-needle-redis-add-entry
         };
     }

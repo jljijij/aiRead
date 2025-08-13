@@ -20,6 +20,35 @@ spring:
   config:
     activate:
       on-profile: '!api-docs'
+  data:
+    redis:
+      host: 8.134.23.195
+      password:
+      port: 6379
+
+  liquibase:
+    enabled: true
+    change-log: classpath:config/liquibase/master.xml
+
+
+
+  cache:
+    type: jcache
+    jcache:
+      provider: org.redisson.jcache.JCachingProvider
+      config: classpath:redisson-jcache.yaml
+
+  jpa:
+    properties:
+      hibernate.cache.use_second_level_cache: true
+      hibernate.cache.use_query_cache: true
+      hibernate.cache.region.factory_class: org.hibernate.cache.jcache.internal.JCacheRegionFactory
+      hibernate.javax.cache.missing_cache_strategy: create
+
+#redisson:
+#  config: |
+#    singleServerConfig:
+#      address: "redis://8.134.23.195:6379"
 springdoc:
   api-docs:
     enabled: false
@@ -95,7 +124,7 @@ spring:
     name: aiRead
   docker:
     compose:
-      enabled: true
+      enabled: false
       lifecycle-management: start-only
       file: src/main/docker/services.yml
   profiles:
@@ -214,6 +243,19 @@ jhipster:
     license-url:
   security:
     content-security-policy: "default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
+minio:
+  endpoint: http://8.134.23.195:9000
+  access-key: admin
+  secret-key: admin123
+  bucket: novel
+
+rocketmq:
+  name-server: 192.168.0.107:9876
+  producer:
+    group: novel-group
+
+
+
 
 # jhipster-needle-add-application-yaml-document
 ---

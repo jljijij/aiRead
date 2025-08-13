@@ -21,6 +21,9 @@ logging:
     com.shanzha: DEBUG
 
 spring:
+  data:
+    redis:
+      host: 8.134.23.195
   devtools:
     restart:
       enabled: true
@@ -32,9 +35,9 @@ spring:
       indent-output: true
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:mysql://localhost:3306/aiRead?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true
+    url: jdbc:mysql://8.134.23.195:3306/aiRead?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true
     username: root
-    password:
+    password: ka12345
     hikari:
       poolName: Hikari
       auto-commit: false
@@ -43,6 +46,11 @@ spring:
         prepStmtCacheSize: 250
         prepStmtCacheSqlLimit: 2048
         useServerPrepStmts: true
+        max-lifetime: 1800000  # 30分钟
+        idle-timeout: 600000   # 10分钟
+        connection-timeout: 30000
+        validation-timeout: 5000
+        connection-test-query: SELECT 1
   liquibase:
     # Remove 'faker' if you do not want the sample data to be loaded automatically
     contexts: dev, faker
@@ -57,7 +65,7 @@ spring:
     cache: false
 
 server:
-  port: 8080
+  port: 8081
   # make sure requests the proxy uri instead of the server one
   forward-headers-strategy: native
 
@@ -71,7 +79,7 @@ jhipster:
   cache: # Cache configuration
     redis: # Redis configuration
       expiration: 3600 # By default objects stay 1 hour (in seconds) in the cache
-      server: redis://localhost:6379
+      server: redis://8.134.23.195:6379
       cluster: false
       # server: redis://localhost:6379,redis://localhost:16379,redis://localhost:26379
       # cluster: true
@@ -113,3 +121,13 @@ jhipster:
 # ===================================================================
 
 # application:
+deepseek:
+  apiHost: https://api.deepseek.com
+  apiKey:  dddddd
+  timeout: 900
+
+novel:
+  sensitive: # 敏感词校验相关配置
+    enable: true
+    deny: 毒品
+    allow: 国,制作,码,亚洲,中国,公司,简历,性,国研,鬼,国庆,用户,扑克,法,鲁迅,祖国,口,色,俄罗斯 # 自定义的非敏感词，英文逗号分割

@@ -228,7 +228,7 @@ docker compose -f src/main/docker/services.yml down
 ```yaml
 spring:
   ...
-  docker:
+  
     compose:
       enabled: false
 ```

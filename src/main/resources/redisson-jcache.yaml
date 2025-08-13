@@ -1,0 +1,8 @@
+singleServerConfig:
+  address: redis://8.134.23.195:6379        # 本地: redis://127.0.0.1:6379 或 docker compose 的 redis 服务名
+
+  database: 0
+  connectionPoolSize: 64
+  connectionMinimumIdleSize: 24
+threads: 4
+nettyThreads: 8

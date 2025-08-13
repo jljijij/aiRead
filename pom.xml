@@ -35,6 +35,10 @@
         <argLine>-Djava.security.egd=file:/dev/./urandom -Xmx1G</argLine>
         <m2e.apt.activation>jdt_apt</m2e.apt.activation>
         <run.addResources>false</run.addResources>
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <sensitive.version>0.8.0</sensitive.version>
+        <hibernate-jpamodelgen.version>6.4.4.Final</hibernate-jpamodelgen.version>
+        <jaxb-xjc.version>4.0.3</jaxb-xjc.version>
         <spring-boot.version>${project.parent.version}</spring-boot.version>
         <archunit-junit5.version>1.4.0</archunit-junit5.version>
         <checkstyle.version>10.23.1</checkstyle.version>
@@ -80,8 +84,42 @@
         <spring.profiles.active>dev</spring.profiles.active>
         <springdoc-openapi-starter-webmvc-api.version>2.8.8</springdoc-openapi-starter-webmvc-api.version>
     </properties>
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+          <groupId>com.fasterxml.jackson</groupId>
+          <artifactId>jackson-bom</artifactId>
+          <version>2.15.3</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
 
     <dependencies>
+        <dependency>
+          <groupId>org.apache.poi</groupId>
+          <artifactId>poi-ooxml</artifactId>
+          <version>5.2.5</version>
+        </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>5.11.0</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>5.11.0</version>
+        <scope>test</scope>
+      </dependency>
+        <dependency>
+          <groupId>org.mockito</groupId>
+          <artifactId>mockito-core</artifactId>
+          <version>5.12.0</version>
+          <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>tech.jhipster</groupId>
             <artifactId>jhipster-framework</artifactId>
@@ -95,6 +133,20 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-loader-tools</artifactId>
+        </dependency>
+<!--      <dependency>-->
+<!--        <groupId>org.apache.pdfbox</groupId>-->
+<!--        <artifactId>pdfbox</artifactId>-->
+<!--      </dependency>-->
+<!--      <dependency>-->
+<!--        <groupId>org.apache.poi</groupId>-->
+<!--        <artifactId>poi-scratchpad</artifactId>-->
+<!--      </dependency>-->
+        <dependency>
+          <groupId>org.apache.poi</groupId>
+          <artifactId>poi-ooxml</artifactId>
+          <version>5.2.5</version> <!-- 或按你的版本管理 -->
+          <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -129,18 +181,34 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
+          <groupId>io.undertow</groupId>
+          <artifactId>undertow-core</artifactId>
+          <version>2.3.14.Final</version>
+          <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
+            <exclusions>
+              <exclusion>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+              </exclusion>
+          </exclusions>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-undertow</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-starter-undertow</artifactId>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--          <groupId>io.undertow</groupId>-->
+<!--          <artifactId>undertow-websockets-jsr</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -148,12 +216,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-tomcat</artifactId>
-                </exclusion>
-            </exclusions>
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.springframework.boot</groupId>-->
+<!--                    <artifactId>spring-boot-starter-tomcat</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -177,10 +245,15 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springdoc</groupId>-->
+<!--            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>-->
+<!--            <version>${springdoc-openapi-starter-webmvc-api.version}</version>-->
+<!--        </dependency>-->
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
-            <version>${springdoc-openapi-starter-webmvc-api.version}</version>
+          <groupId>org.springdoc</groupId>
+          <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+          <version>${springdoc-openapi-starter-webmvc-api.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -203,6 +276,16 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
+          <groupId>com.github.plexpt</groupId>
+          <artifactId>chatgpt</artifactId>
+          <version>4.4.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-devtools</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5-api</artifactId>
             <version>${archunit-junit5.version}</version>
@@ -215,6 +298,11 @@
             <artifactId>archunit-junit5-engine</artifactId>
             <version>${archunit-junit5.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+          <groupId>com.github.houbb</groupId>
+          <artifactId>sensitive-word</artifactId>
+          <version>${sensitive.version}</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -276,14 +364,48 @@
             <version>${jackson-databind-nullable.version}</version>
         </dependency>
         <dependency>
+          <groupId>io.minio</groupId>
+          <artifactId>minio</artifactId>
+          <version>8.5.8</version>
+        </dependency>
+        <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
             <version>${redisson.version}</version>
         </dependency>
         <dependency>
+          <groupId>org.redisson</groupId>
+          <artifactId>redisson-spring-boot-starter</artifactId>
+          <version>3.23.4</version> <!-- 可根据需要选择最新版本 -->
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>jdbc</artifactId>
             <scope>test</scope>
+        </dependency>
+
+      <!-- Lombok MapStruct Binding -->
+        <dependency>
+          <groupId>org.projectlombok</groupId>
+          <artifactId>lombok-mapstruct-binding</artifactId>
+          <version>0.2.0</version>
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.projectlombok</groupId>
+          <artifactId>lombok</artifactId>
+          <version>1.18.30</version> <!-- 可根据需要替换为最新版 -->
+          <scope>provided</scope>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.rocketmq</groupId>
+          <artifactId>rocketmq-client</artifactId>
+          <version>4.9.4</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.rocketmq</groupId>
+          <artifactId>rocketmq-spring-boot-starter</artifactId>
+          <version>2.2.3</version> <!-- 或使用最新版 -->
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -300,6 +422,16 @@
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-scratchpad</artifactId>
+        <version>4.1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>2.0.16</version>
+      </dependency>
     </dependencies>
 
     <build>
@@ -431,24 +563,41 @@
                         <source>${java.version}</source>
                         <target>${java.version}</target>
                         <parameters>true</parameters>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.springframework.boot</groupId>
-                                <artifactId>spring-boot-configuration-processor</artifactId>
-                            </path>
-                            <path>
-                                <groupId>org.mapstruct</groupId>
-                                <artifactId>mapstruct-processor</artifactId>
-                                <version>${mapstruct.version}</version>
-                            </path>
-                            <path>
-                                <groupId>org.hibernate.orm</groupId>
-                                <artifactId>hibernate-jpamodelgen</artifactId>
-                            </path>
-                            <path>
-                                <groupId>org.glassfish.jaxb</groupId>
-                                <artifactId>jaxb-runtime</artifactId>
-                            </path>
+                      <annotationProcessorPaths>
+                        <!-- Spring Boot Configuration Processor -->
+                          <path>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-configuration-processor</artifactId>
+                            <version>${spring-boot.version}</version>
+                          </path>
+
+                          <!-- MapStruct -->
+                          <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                          </path>
+
+                          <!-- Hibernate JPA Metamodel Generator -->
+                          <path>
+                            <groupId>org.hibernate.orm</groupId>
+                            <artifactId>hibernate-jpamodelgen</artifactId>
+                            <version>6.4.4.Final</version> <!-- 或根据你使用的 Hibernate 版本指定 -->
+                          </path>
+
+                          <!-- JAXB -->
+                          <path>
+                            <groupId>org.glassfish.jaxb</groupId>
+                            <artifactId>jaxb-runtime</artifactId>
+                            <version>4.0.3</version>
+                          </path>
+
+                          <!-- Lombok -->
+                          <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.30</version>
+                          </path>
                         </annotationProcessorPaths>
                     </configuration>
                 </plugin>
@@ -876,8 +1025,8 @@
             </activation>
             <properties>
                 <!-- default Spring profiles -->
-                <liquibase-plugin.password/>
-                <liquibase-plugin.url>jdbc:mysql://localhost:3306/aiRead</liquibase-plugin.url>
+                <liquibase-plugin.password>ka12345</liquibase-plugin.password>
+                <liquibase-plugin.url>jdbc:mysql://8.134.23.195:3306/aiRead</liquibase-plugin.url>
                 <liquibase-plugin.username>root</liquibase-plugin.username>
                 <profile.test>test,testdev</profile.test>
                 <spring.profiles.active>dev${profile.tls}${profile.no-liquibase}</spring.profiles.active>
@@ -912,11 +1061,15 @@
                 </property>
             </activation>
             <dependencies>
-                <dependency>
-                    <!-- The following dependency is added due to issue #9175-->
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-undertow</artifactId>
-                </dependency>
+<!--                <dependency>-->
+<!--                    &lt;!&ndash; The following dependency is added due to issue #9175&ndash;&gt;-->
+<!--                    <groupId>org.springframework.boot</groupId>-->
+<!--                    <artifactId>spring-boot-starter-undertow</artifactId>-->
+<!--                </dependency>-->
+<!--              <dependency>-->
+<!--                <groupId>io.undertow</groupId>-->
+<!--                <artifactId>undertow-websockets-jsr</artifactId>-->
+<!--              </dependency>-->
             </dependencies>
             <build>
                 <pluginManagement>

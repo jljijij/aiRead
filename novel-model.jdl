@@ -1,0 +1,57 @@
+// novel-model.jdl
+
+entity Novel {
+  title String required
+  authorId Long required
+  coverUrl String
+  description String
+  categoryId Integer required
+  tags String
+  wordCount Integer
+  chapterCount Integer
+  status Integer required
+  isVip Boolean
+  createTime Instant required
+  updateTime Instant required
+}
+
+entity Chapter {
+//  novelId Long required
+  chapterNo Integer required
+  title String required
+  contentId Long required
+  wordCount Integer
+  isVip Boolean
+  price Integer
+  createTime Instant required
+  updateTime Instant required
+}
+
+entity ChapterContent {
+  novelId Long required
+//  chapterId Long required
+  pageId Long required
+  compressed Blob required
+  compressionType Integer
+  hash String
+  createTime Instant required
+}
+
+entity NovelTag {
+  tagId String required
+  tagName String required
+  category String required
+  isHot Boolean
+  createTime Instant required
+  updateTime Instant required
+}
+
+relationship ManyToOne {
+  Chapter{novel(title)} to Novel,
+  ChapterContent{chapter(title)} to Chapter
+}
+
+// 可选：DTO、Service、分页配置
+dto all with mapstruct
+service all with serviceClass
+paginate Chapter, NovelTag with pagination
