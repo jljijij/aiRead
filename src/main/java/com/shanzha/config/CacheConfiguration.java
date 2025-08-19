@@ -35,7 +35,14 @@ public class CacheConfiguration {
     public javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration(JHipsterProperties jHipsterProperties) {
         MutableConfiguration<Object, Object> jcacheConfig = new MutableConfiguration<>();
 
-        URI redisUri = URI.create(jHipsterProperties.getCache().getRedis().getServer()[0]);
+        String[] servers = jHipsterProperties.getCache().getRedis().getServer();
+        for (int i = 0; i < servers.length; i++) {
+            if (!servers[i].startsWith("redis://") && !servers[i].startsWith("rediss://")) {
+                servers[i] = "redis://" + servers[i];
+            }
+        }
+
+        URI redisUri = URI.create(servers[0]);
 
         Config config = new Config();
         // Fix Hibernate lazy initialization https://github.com/jhipster/generator-jhipster/issues/22889
@@ -46,7 +53,7 @@ public class CacheConfiguration {
                 .setMasterConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
                 .setMasterConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
-                .addNodeAddress(jHipsterProperties.getCache().getRedis().getServer());
+                .addNodeAddress(servers);
 
             if (redisUri.getUserInfo() != null) {
                 clusterServersConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
@@ -57,7 +64,7 @@ public class CacheConfiguration {
                 .setConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
                 .setConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
-                .setAddress(jHipsterProperties.getCache().getRedis().getServer()[0]);
+                .setAddress(servers[0]);
 
             if (redisUri.getUserInfo() != null) {
                 singleServerConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
@@ -83,6 +90,10 @@ public class CacheConfiguration {
             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Novel.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);
+            createCache(cm, com.shanzha.domain.Coupon.class.getName(), jcacheConfiguration);
             // jhipster-needle-redis-add-entry
         };
     }
