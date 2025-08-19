@@ -1,0 +1,477 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF'
+diff --git a/src/main/java/com/shanzha/domain/ReadingVoucher.java b/src/main/java/com/shanzha/domain/ReadingVoucher.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4f7a3e288c40892df72736529d6270c1f795db5b
+--- /dev/null
++++ b/src/main/java/com/shanzha/domain/ReadingVoucher.java
+@@ -0,0 +1,128 @@
++package com.shanzha.domain;
++
++import jakarta.persistence.*;
++import java.io.Serializable;
++import java.time.Instant;
++import java.util.Objects;
++
++/**
++ * A ReadingVoucher.
++ */
++@Entity
++@Table(name = "reading_voucher")
++public class ReadingVoucher implements Serializable {
++
++    private static final long serialVersionUID = 1L;
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    private Long id;
++
++    @Column(name = "code", nullable = false, unique = true)
++    private String code;
++
++    @Column(name = "issued_at")
++    private Instant issuedAt;
++
++    @Column(name = "expires_at")
++    private Instant expiresAt;
++
++    @Column(name = "claimed_by")
++    private String claimedBy;
++
++    @Lob
++    @Column(name = "file")
++    private byte[] file;
++
++    @Column(name = "file_content_type")
++    private String fileContentType;
++
++    public Long getId() {
++        return id;
++    }
++
++    public void setId(Long id) {
++        this.id = id;
++    }
++
++    public String getCode() {
++        return code;
++    }
++
++    public void setCode(String code) {
++        this.code = code;
++    }
++
++    public Instant getIssuedAt() {
++        return issuedAt;
++    }
++
++    public void setIssuedAt(Instant issuedAt) {
++        this.issuedAt = issuedAt;
++    }
++
++    public Instant getExpiresAt() {
++        return expiresAt;
++    }
++
++    public void setExpiresAt(Instant expiresAt) {
++        this.expiresAt = expiresAt;
++    }
++
++    public String getClaimedBy() {
++        return claimedBy;
++    }
++
++    public void setClaimedBy(String claimedBy) {
++        this.claimedBy = claimedBy;
++    }
++
++    public byte[] getFile() {
++        return file;
++    }
++
++    public void setFile(byte[] file) {
++        this.file = file;
++    }
++
++    public String getFileContentType() {
++        return fileContentType;
++    }
++
++    public void setFileContentType(String fileContentType) {
++        this.fileContentType = fileContentType;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        ReadingVoucher that = (ReadingVoucher) o;
++        return id != null && Objects.equals(id, that.id);
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hashCode(id);
++    }
++
++    @Override
++    public String toString() {
++        return (
++            "ReadingVoucher{" +
++            "id=" +
++            id +
++            ", code='" +
++            code +
++            '\'' +
++            ", issuedAt=" +
++            issuedAt +
++            ", expiresAt=" +
++            expiresAt +
++            ", claimedBy='" +
++            claimedBy +
++            '\'' +
++            "}"
++        );
++    }
++}
+diff --git a/src/main/java/com/shanzha/repository/ReadingVoucherRepository.java b/src/main/java/com/shanzha/repository/ReadingVoucherRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c1cc077b78005d8768198727adcd739fde35c758
+--- /dev/null
++++ b/src/main/java/com/shanzha/repository/ReadingVoucherRepository.java
+@@ -0,0 +1,15 @@
++package com.shanzha.repository;
++
++import com.shanzha.domain.ReadingVoucher;
++import java.time.Instant;
++import java.util.Optional;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++/**
++ * Spring Data JPA repository for the ReadingVoucher entity.
++ */
++@Repository
++public interface ReadingVoucherRepository extends JpaRepository<ReadingVoucher, Long> {
++    Optional<ReadingVoucher> findFirstByClaimedByIsNullOrderByIssuedAtAsc();
++}
+diff --git a/src/main/java/com/shanzha/service/ReadingVoucherService.java b/src/main/java/com/shanzha/service/ReadingVoucherService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a8ed31d9f5759385335f2ff4baefe537db36cfc4
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/ReadingVoucherService.java
+@@ -0,0 +1,61 @@
++package com.shanzha.service;
++
++import com.shanzha.domain.ReadingVoucher;
++import com.shanzha.repository.ReadingVoucherRepository;
++import java.io.IOException;
++import java.time.Instant;
++import java.time.temporal.ChronoUnit;
++import java.util.List;
++import java.util.Optional;
++import java.util.UUID;
++import org.springframework.scheduling.annotation.Scheduled;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++import org.springframework.web.multipart.MultipartFile;
++
++/**
++ * Service for managing {@link ReadingVoucher}.
++ */
++@Service
++@Transactional
++public class ReadingVoucherService {
++
++    private final ReadingVoucherRepository readingVoucherRepository;
++
++    public ReadingVoucherService(ReadingVoucherRepository readingVoucherRepository) {
++        this.readingVoucherRepository = readingVoucherRepository;
++    }
++
++    public ReadingVoucher saveWithFile(MultipartFile file) throws IOException {
++        ReadingVoucher voucher = new ReadingVoucher();
++        voucher.setCode(UUID.randomUUID().toString());
++        voucher.setIssuedAt(Instant.now());
++        voucher.setExpiresAt(Instant.now().plus(1, ChronoUnit.DAYS));
++        voucher.setFile(file.getBytes());
++        voucher.setFileContentType(file.getContentType());
++        return readingVoucherRepository.save(voucher);
++    }
++
++    public Optional<ReadingVoucher> claimVoucher(String userLogin) {
++        return readingVoucherRepository
++            .findFirstByClaimedByIsNullOrderByIssuedAtAsc()
++            .map(voucher -> {
++                voucher.setClaimedBy(userLogin);
++                return voucher;
++            });
++    }
++
++    @Scheduled(fixedRate = 86_400_000)
++    public void issuePeriodicVoucher() {
++        ReadingVoucher voucher = new ReadingVoucher();
++        voucher.setCode(UUID.randomUUID().toString());
++        voucher.setIssuedAt(Instant.now());
++        voucher.setExpiresAt(Instant.now().plus(1, ChronoUnit.DAYS));
++        readingVoucherRepository.save(voucher);
++    }
++
++    @Transactional(readOnly = true)
++    public List<ReadingVoucher> findAll() {
++        return readingVoucherRepository.findAll();
++    }
++}
+diff --git a/src/main/java/com/shanzha/web/rest/ReadingVoucherResource.java b/src/main/java/com/shanzha/web/rest/ReadingVoucherResource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..06576ac848ce21f88c8c95862764c40d03cbd187
+--- /dev/null
++++ b/src/main/java/com/shanzha/web/rest/ReadingVoucherResource.java
+@@ -0,0 +1,48 @@
++package com.shanzha.web.rest;
++
++import com.shanzha.domain.ReadingVoucher;
++import com.shanzha.service.ReadingVoucherService;
++import java.io.IOException;
++import java.security.Principal;
++import java.util.List;
++import java.util.Optional;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++import org.springframework.web.multipart.MultipartFile;
++
++/**
++ * REST controller for managing {@link ReadingVoucher}.
++ */
++@RestController
++@RequestMapping("/api/reading-vouchers")
++public class ReadingVoucherResource {
++
++    private static final Logger LOG = LoggerFactory.getLogger(ReadingVoucherResource.class);
++
++    private final ReadingVoucherService readingVoucherService;
++
++    public ReadingVoucherResource(ReadingVoucherService readingVoucherService) {
++        this.readingVoucherService = readingVoucherService;
++    }
++
++    @PostMapping("/upload")
++    public ResponseEntity<ReadingVoucher> upload(@RequestParam("file") MultipartFile file) throws IOException {
++        LOG.debug("REST request to upload file : {}", file.getOriginalFilename());
++        ReadingVoucher result = readingVoucherService.saveWithFile(file);
++        return ResponseEntity.ok(result);
++    }
++
++    @PostMapping("/claim")
++    public ResponseEntity<ReadingVoucher> claim(Principal principal) {
++        LOG.debug("REST request to claim voucher by : {}", principal.getName());
++        Optional<ReadingVoucher> voucher = readingVoucherService.claimVoucher(principal.getName());
++        return voucher.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
++    }
++
++    @GetMapping
++    public List<ReadingVoucher> getAll() {
++        return readingVoucherService.findAll();
++    }
++}
+diff --git a/src/main/resources/config/liquibase/changelog/20250724000000_added_entity_ReadingVoucher.xml b/src/main/resources/config/liquibase/changelog/20250724000000_added_entity_ReadingVoucher.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..e42e8969e8ec51a97f96f10d7786556f0cf85f36
+--- /dev/null
++++ b/src/main/resources/config/liquibase/changelog/20250724000000_added_entity_ReadingVoucher.xml
+@@ -0,0 +1,30 @@
++<?xml version="1.0" encoding="utf-8"?>
++<databaseChangeLog
++    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
++    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
++    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
++    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
++                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
++
++    <!--
++        Added the entity ReadingVoucher.
++    -->
++    <changeSet id="20250724000000-1" author="jhipster">
++        <createTable tableName="reading_voucher">
++            <column name="id" type="bigint" autoIncrement="true">
++                <constraints primaryKey="true" nullable="false"/>
++            </column>
++            <column name="code" type="varchar(255)">
++                <constraints nullable="false" unique="true"/>
++            </column>
++            <column name="issued_at" type="${datetimeType}"/>
++            <column name="expires_at" type="${datetimeType}"/>
++            <column name="claimed_by" type="varchar(255)"/>
++            <column name="file" type="${blobType}"/>
++            <column name="file_content_type" type="varchar(255)"/>
++            <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
++        </createTable>
++    </changeSet>
++
++    <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
++</databaseChangeLog>
+diff --git a/src/main/resources/config/liquibase/master.xml b/src/main/resources/config/liquibase/master.xml
+index 718da0c832fa1b962295b39a7ba7e04bfbdc351c..3d47ecb5ca98cd52175c388f66f03d0f162d8ded 100644
+--- a/src/main/resources/config/liquibase/master.xml
++++ b/src/main/resources/config/liquibase/master.xml
+@@ -1,18 +1,19 @@
+ <?xml version="1.0" encoding="utf-8"?>
+ <databaseChangeLog
+     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+     <property name="now" value="now()" dbms="mysql"/>
+     <property name="floatType" value="float" dbms="mysql"/>
+     <property name="clobType" value="clob" dbms="mysql"/>
+     <property name="blobType" value="longblob" dbms="mysql"/>
+     <property name="uuidType" value="varchar(36)" dbms="mysql"/>
+     <property name="datetimeType" value="datetime(6)" dbms="mysql"/>
+     <property name="timeType" value="time(6)" dbms="mysql"/>
+
+     <include file="config/liquibase/changelog/00000000000000_initial_schema.xml" relativeToChangelogFile="false"/>
++    <include file="config/liquibase/changelog/20250724000000_added_entity_ReadingVoucher.xml" relativeToChangelogFile="false"/>
+     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
+     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
+     <!-- jhipster-needle-liquibase-add-incremental-changelog - JHipster will add incremental liquibase changelogs here -->
+ </databaseChangeLog>
+diff --git a/src/main/webapp/app/entities/entities-menu.vue b/src/main/webapp/app/entities/entities-menu.vue
+index 22b4569327aa97c8b1ed5ffa1348cff7d62e3403..27161f0ea718acd0669d5eff0e00999956fe6814 100644
+--- a/src/main/webapp/app/entities/entities-menu.vue
++++ b/src/main/webapp/app/entities/entities-menu.vue
+@@ -1,7 +1,8 @@
+ <template>
+   <div>
++    <router-link to="/reading-voucher" class="dropdown-item">Reading Vouchers</router-link>
+     <!-- jhipster-needle-add-entity-to-menu - JHipster will add entities to the menu here -->
+   </div>
+ </template>
+
+ <script lang="ts" src="./entities-menu.component.ts"></script>
+diff --git a/src/main/webapp/app/entities/entities.component.ts b/src/main/webapp/app/entities/entities.component.ts
+index 09089afa5564221d995faeaca2795e10df3fb9b6..02a2a502623c83459ec6c597d450f408381e0f22 100644
+--- a/src/main/webapp/app/entities/entities.component.ts
++++ b/src/main/webapp/app/entities/entities.component.ts
+@@ -1,13 +1,15 @@
+ import { defineComponent, provide } from 'vue';
+
+ import UserService from '@/entities/user/user.service';
++import ReadingVoucherService from '@/entities/reading-voucher/reading-voucher.service';
+ // jhipster-needle-add-entity-service-to-entities-component-import - JHipster will import entities services here
+
+ export default defineComponent({
+   compatConfig: { MODE: 3 },
+   name: 'Entities',
+   setup() {
+     provide('userService', () => new UserService());
++    provide('readingVoucherService', () => new ReadingVoucherService());
+     // jhipster-needle-add-entity-service-to-entities-component - JHipster will import entities services here
+   },
+ });
+diff --git a/src/main/webapp/app/entities/reading-voucher/reading-voucher.component.ts b/src/main/webapp/app/entities/reading-voucher/reading-voucher.component.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6cfc659d7c8f6c2f3b7f7ee243986f397341882c
+--- /dev/null
++++ b/src/main/webapp/app/entities/reading-voucher/reading-voucher.component.ts
+@@ -0,0 +1,32 @@
++import { defineComponent, inject, ref } from 'vue';
++import type ReadingVoucherService from './reading-voucher.service';
++
++export default defineComponent({
++  compatConfig: { MODE: 3 },
++  name: 'ReadingVoucher',
++  setup() {
++    const readingVoucherService = inject('readingVoucherService') as () => ReadingVoucherService;
++    const file = ref<File | null>(null);
++    const claimedCode = ref('');
++
++    const upload = () => {
++      if (file.value) {
++        readingVoucherService()
++          .upload(file.value)
++          .then(() => {
++            file.value = null;
++          });
++      }
++    };
++
++    const claimVoucher = () => {
++      readingVoucherService()
++        .claim()
++        .then(res => {
++          claimedCode.value = res.data.code;
++        });
++    };
++
++    return { file, upload, claimVoucher, claimedCode };
++  },
++});
+diff --git a/src/main/webapp/app/entities/reading-voucher/reading-voucher.service.ts b/src/main/webapp/app/entities/reading-voucher/reading-voucher.service.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..8ca1ffe2bdde84e0ba690f508cb58fb8d9ff45ea
+--- /dev/null
++++ b/src/main/webapp/app/entities/reading-voucher/reading-voucher.service.ts
+@@ -0,0 +1,19 @@
++import axios from 'axios';
++
++export default class ReadingVoucherService {
++  public upload(file: File): Promise<any> {
++    const formData = new FormData();
++    formData.append('file', file);
++    return axios.post('api/reading-vouchers/upload', formData, {
++      headers: { 'Content-Type': 'multipart/form-data' },
++    });
++  }
++
++  public claim(): Promise<any> {
++    return axios.post('api/reading-vouchers/claim');
++  }
++
++  public retrieve(): Promise<any> {
++    return axios.get('api/reading-vouchers');
++  }
++}
+diff --git a/src/main/webapp/app/entities/reading-voucher/reading-voucher.vue b/src/main/webapp/app/entities/reading-voucher/reading-voucher.vue
+new file mode 100644
+index 0000000000000000000000000000000000000000..5603f21933aba8cf9a467004c9750fd279d34d88
+--- /dev/null
++++ b/src/main/webapp/app/entities/reading-voucher/reading-voucher.vue
+@@ -0,0 +1,13 @@
++<template>
++  <div>
++    <h2 id="reading-voucher-heading">Reading Vouchers</h2>
++    <b-form @submit.prevent="upload">
++      <b-form-file v-model="file" required></b-form-file>
++      <b-button type="submit" variant="primary" class="mt-2">Upload</b-button>
++    </b-form>
++    <b-button class="mt-3" variant="success" @click="claimVoucher">Claim Voucher</b-button>
++    <div v-if="claimedCode" class="alert alert-info mt-3">Claimed voucher: {{ claimedCode }}</div>
++  </div>
++</template>
++
++<script lang="ts" src="./reading-voucher.component.ts"></script>
+diff --git a/src/main/webapp/app/router/entities.ts b/src/main/webapp/app/router/entities.ts
+index 451fe9959107fcaea2d09e47277ab018fca1594b..f23545e675dd33270be3fe0f80726201c5af6ad2 100644
+--- a/src/main/webapp/app/router/entities.ts
++++ b/src/main/webapp/app/router/entities.ts
+@@ -1,11 +1,17 @@
+ const Entities = () => import('@/entities/entities.vue');
+
+ // jhipster-needle-add-entity-to-router-import - JHipster will import entities to the router here
++const ReadingVoucher = () => import('@/entities/reading-voucher/reading-voucher.vue');
+
+ export default {
+   path: '/',
+   component: Entities,
+   children: [
++    {
++      path: 'reading-voucher',
++      name: 'ReadingVoucher',
++      component: ReadingVoucher,
++    },
+     // jhipster-needle-add-entity-to-router - JHipster will add entities to the router here
+   ],
+ };
+
+EOF
+)
