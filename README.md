@@ -174,6 +174,13 @@ Unit tests are run by [Vitest][]. They're located near components and can be run
 
 ## Others
 
+### Bloom filter considerations
+
+Chapter content lookups use a Redis-backed Bloom filter (`RBloomFilter`) to avoid most cache penetration. This filter is
+append-only and does not support removing individual entries. When a chapter is deleted its key remains in the filter,
+so lookups may still hit the database once before a missing placeholder is cached. This behavior is expected and keeps
+deletion logic simple at the cost of one extra lookup after removal.
+
 ### Code quality using Sonar
 
 Sonar is used to analyse code quality. You can start a local Sonar server (accessible on http://localhost:9001) with:
@@ -228,7 +235,7 @@ docker compose -f src/main/docker/services.yml down
 ```yaml
 spring:
   ...
-  
+
     compose:
       enabled: false
 ```
