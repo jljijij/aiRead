@@ -88,7 +88,10 @@ public class CacheConfiguration {
             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
-            createCache(cm, com.shanzha.domain.Novel.class.getName(), jcacheConfiguration);
+            MutableConfiguration<Object, Object> novelCacheConfiguration = new MutableConfiguration<>(
+                jcacheConfiguration
+            ).setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)));
+            createCache(cm, com.shanzha.domain.Novel.class.getName(), novelCacheConfiguration);
             createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.NovelTag.class.getName(), jcacheConfiguration);

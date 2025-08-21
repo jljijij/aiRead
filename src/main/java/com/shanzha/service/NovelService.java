@@ -2,13 +2,12 @@ package com.shanzha.service;
 
 import com.shanzha.domain.Novel;
 import com.shanzha.repository.NovelRepository;
+import com.shanzha.service.NovelRankService;
 import com.shanzha.service.dto.NovelDTO;
 import com.shanzha.service.mapper.NovelMapper;
-
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.hwpf.HWPFDocument;
@@ -17,7 +16,9 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,12 +31,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class NovelService {
 
     private static final Logger LOG = LoggerFactory.getLogger(NovelService.class);
-    private static final String RANK_KEY = "novel:read:rank";;
+    private static final String RANK_KEY = "novel:read:rank";
 
     private final NovelRepository novelRepository;
 
     private final NovelMapper novelMapper;
 
+    private final NovelRankService novelRankService;
 
     public String parseFile(MultipartFile file) throws IOException {
         String filename = file.getOriginalFilename();
@@ -60,10 +62,11 @@ public class NovelService {
             throw new IllegalArgumentException("Unsupported file type");
         }
     }
-    public NovelService(NovelRepository novelRepository, NovelMapper novelMapper) {
+
+    public NovelService(NovelRepository novelRepository, NovelMapper novelMapper, NovelRankService novelRankService) {
         this.novelRepository = novelRepository;
         this.novelMapper = novelMapper;
-
+        this.novelRankService = novelRankService;
     }
 
     /**
@@ -72,6 +75,7 @@ public class NovelService {
      * @param novelDTO the entity to save.
      * @return the persisted entity.
      */
+    @CachePut(cacheNames = Novel.class.getName(), key = "#result.id")
     public NovelDTO save(NovelDTO novelDTO) {
         LOG.debug("Request to save Novel : {}", novelDTO);
         Novel novel = novelMapper.toEntity(novelDTO);
@@ -85,6 +89,7 @@ public class NovelService {
      * @param novelDTO the entity to save.
      * @return the persisted entity.
      */
+    @CachePut(cacheNames = Novel.class.getName(), key = "#result.id")
     public NovelDTO update(NovelDTO novelDTO) {
         LOG.debug("Request to update Novel : {}", novelDTO);
         Novel novel = novelMapper.toEntity(novelDTO);
@@ -98,6 +103,7 @@ public class NovelService {
      * @param novelDTO the entity to update partially.
      * @return the persisted entity.
      */
+    @CachePut(cacheNames = Novel.class.getName(), key = "#result.get().id", condition = "#result.isPresent()")
     public Optional<NovelDTO> partialUpdate(NovelDTO novelDTO) {
         LOG.debug("Request to partially update Novel : {}", novelDTO);
 
@@ -130,6 +136,7 @@ public class NovelService {
      * @return the entity.
      */
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = Novel.class.getName(), key = "#id", unless = "#result == null")
     public Optional<NovelDTO> findOne(Long id) {
         LOG.debug("Request to get Novel : {}", id);
         return novelRepository.findById(id).map(novelMapper::toDto);
@@ -140,15 +147,15 @@ public class NovelService {
      *
      * @param id the id of the entity.
      */
+    @CacheEvict(cacheNames = Novel.class.getName(), key = "#id")
     public void delete(Long id) {
         LOG.debug("Request to delete Novel : {}", id);
         novelRepository.deleteById(id);
+        novelRankService.removeFromRanking(id);
     }
 
     public List<Long> getTop10HottestNovelIds() {
         Map<String, Double> rankMap = RedisClient.getTopZSetWithScore(RANK_KEY, 10);
-        return rankMap.keySet().stream()
-            .map(Long::valueOf)
-            .collect(Collectors.toList());
+        return rankMap.keySet().stream().map(Long::valueOf).collect(Collectors.toList());
     }
 }
