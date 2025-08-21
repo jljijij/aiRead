@@ -29,12 +29,7 @@ public class NovelRankService {
                 connection.hashCommands().hIncrBy(READ_COUNT_KEY.getBytes(), String.valueOf(novelId).getBytes(), 1L);
 
                 // 2. ZSET中更新排行榜
-                Double currentScore = connection.zSetCommands().zScore(RANKING_KEY.getBytes(), String.valueOf(novelId).getBytes());
-
-                connection
-                    .zSetCommands()
-                    .zAdd(RANKING_KEY.getBytes(), (currentScore != null ? currentScore : 0) + 1, String.valueOf(novelId).getBytes());
-
+                connection.zSetCommands().zIncrBy(RANKING_KEY.getBytes(), 1D, String.valueOf(novelId).getBytes());
                 return null;
             }
         );

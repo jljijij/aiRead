@@ -86,8 +86,7 @@ public class ChapterContentService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional(readOnly = true)
     public void initBloomFilter() {
-        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
-
+        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
         // tryInit 本身就是幂等的。返回 true 表示“刚初始化”，false 表示“已存在”
         boolean firstInit = bloomFilter.tryInit(EXPECTED_INSERTIONS, FALSE_PROBABILITY);
         if (!firstInit) {
@@ -118,11 +117,10 @@ public class ChapterContentService {
         ChapterContent chapterContent = chapterContentMapper.toEntity(chapterContentDTO);
         chapterContent = chapterContentRepository.save(chapterContent);
         Long novelId = chapterContent.getNovelId();
-        Long chapterId = chapterContent.getChapterId();
+        Long chapterId = chapterContent.getChapter() != null ? chapterContent.getChapter().getId() : null;
         Long pageId = chapterContent.getPageId();
         if (novelId != null && chapterId != null && pageId != null) {
-            invalidateCache(novelId, chapterId, pageId);
-            addBloomFilterKey(novelId, chapterId, pageId);
+            redissonClient.getBloomFilter(BLOOM_FILTER_NAME).add(buildChapterKey(novelId, chapterId, pageId));
         }
         return chapterContentMapper.toDto(chapterContent);
     }
@@ -237,7 +235,7 @@ public class ChapterContentService {
         String bloomKey = buildChapterKey(novelId, chapterId, pageId);
 
         // 1. 先通过布隆过滤器判断是否可能存在
-        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
+        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
         if (!bloomFilter.contains(bloomKey)) {
             throw new BusinessException(CommonCodeMsg.NOT_FIND); // 提前返回，不进缓存和数据库
         }
@@ -297,6 +295,7 @@ public class ChapterContentService {
         // 删除数据库中章节分页内容
         List<ChapterContent> contents = chapterContentRepository.findByNovelIdAndChapterId(novelId, chapterId);
         chapterContentRepository.deleteAll(contents);
+        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
         // 清理缓存
         for (ChapterContent content : contents) {
             Long pageId = content.getPageId();
