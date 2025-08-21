@@ -58,4 +58,12 @@ public class NovelRankService {
         }
         return ids.stream().map(Long::valueOf).collect(Collectors.toList());
     }
+
+    /**
+     * 删除排行榜和阅读量中的小说记录
+     */
+    public void removeFromRanking(long novelId) {
+        stringRedisTemplate.opsForZSet().remove(RANKING_KEY, String.valueOf(novelId));
+        stringRedisTemplate.opsForHash().delete(READ_COUNT_KEY, String.valueOf(novelId));
+    }
 }

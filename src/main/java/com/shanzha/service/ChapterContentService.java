@@ -6,15 +6,14 @@ import com.shanzha.repository.ChapterContentRepository;
 import com.shanzha.service.dto.ChapterContentDTO;
 import com.shanzha.service.dto.RedisContent;
 import com.shanzha.service.mapper.ChapterContentMapper;
-
+import com.shanzha.web.rest.errors.BusinessException;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import com.shanzha.web.rest.errors.BusinessException;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
@@ -30,12 +29,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.annotation.PostConstruct;
-
 
 /**
  * Service Implementation for managing {@link com.shanzha.domain.ChapterContent}.
@@ -53,10 +50,15 @@ public class ChapterContentService {
 
     @Autowired
     private RedissonClient redissonClient;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     private final ChapterContentMapper chapterContentMapper;
     static final String BLOOM_FILTER_NAME = "bloom:chapterContent";
     private static final int EXPECTED_INSERTIONS = 1_000_000;
     private static final double FALSE_PROBABILITY = 0.01;
+
     public ChapterContentService(ChapterContentRepository chapterContentRepository, ChapterContentMapper chapterContentMapper) {
         this.chapterContentRepository = chapterContentRepository;
         this.chapterContentMapper = chapterContentMapper;
@@ -66,6 +68,20 @@ public class ChapterContentService {
         return novelId + "::" + chapterId + "::" + pageId;
     }
 
+    private String buildCacheKey(Long novelId, Long chapterId, Long pageId) {
+        return CACHE_KEY_PREFIX + novelId + "--" + chapterId + "--" + pageId;
+    }
+
+    private void invalidateCache(Long novelId, Long chapterId, Long pageId) {
+        String cacheKey = buildCacheKey(novelId, chapterId, pageId);
+        redissonClient.getBucket(cacheKey).delete();
+        stringRedisTemplate.delete(cacheKey);
+    }
+
+    private void addBloomFilterKey(Long novelId, Long chapterId, Long pageId) {
+        String bloomKey = buildChapterKey(novelId, chapterId, pageId);
+        redissonClient.getBloomFilter(BLOOM_FILTER_NAME).add(bloomKey);
+    }
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional(readOnly = true)
@@ -101,6 +117,13 @@ public class ChapterContentService {
         LOG.debug("Request to save ChapterContent : {}", chapterContentDTO);
         ChapterContent chapterContent = chapterContentMapper.toEntity(chapterContentDTO);
         chapterContent = chapterContentRepository.save(chapterContent);
+        Long novelId = chapterContent.getNovelId();
+        Long chapterId = chapterContent.getChapterId();
+        Long pageId = chapterContent.getPageId();
+        if (novelId != null && chapterId != null && pageId != null) {
+            invalidateCache(novelId, chapterId, pageId);
+            addBloomFilterKey(novelId, chapterId, pageId);
+        }
         return chapterContentMapper.toDto(chapterContent);
     }
 
@@ -114,6 +137,13 @@ public class ChapterContentService {
         LOG.debug("Request to update ChapterContent : {}", chapterContentDTO);
         ChapterContent chapterContent = chapterContentMapper.toEntity(chapterContentDTO);
         chapterContent = chapterContentRepository.save(chapterContent);
+        Long novelId = chapterContent.getNovelId();
+        Long chapterId = chapterContent.getChapterId();
+        Long pageId = chapterContent.getPageId();
+        if (novelId != null && chapterId != null && pageId != null) {
+            invalidateCache(novelId, chapterId, pageId);
+            addBloomFilterKey(novelId, chapterId, pageId);
+        }
         return chapterContentMapper.toDto(chapterContent);
     }
 
@@ -134,7 +164,16 @@ public class ChapterContentService {
                 return existingChapterContent;
             })
             .map(chapterContentRepository::save)
-            .map(chapterContentMapper::toDto);
+            .map(saved -> {
+                Long novelId = saved.getNovelId();
+                Long chapterId = saved.getChapterId();
+                Long pageId = saved.getPageId();
+                if (novelId != null && chapterId != null && pageId != null) {
+                    invalidateCache(novelId, chapterId, pageId);
+                    addBloomFilterKey(novelId, chapterId, pageId);
+                }
+                return chapterContentMapper.toDto(saved);
+            });
     }
 
     /**
@@ -180,17 +219,17 @@ public class ChapterContentService {
      */
     public void delete(Long id) {
         LOG.debug("Request to delete ChapterContent : {}", id);
+        chapterContentRepository
+            .findById(id)
+            .ifPresent(content -> invalidateCache(content.getNovelId(), content.getChapterId(), content.getPageId()));
         chapterContentRepository.deleteById(id);
     }
 
     @Transactional(readOnly = true)
     public Optional<ChapterContentDTO> getContent(Long novelId, Long chapterId, Long pageId) {
         log.debug("Request to get ChapterContent by novelId={}, chapterId={}, pageId={}", novelId, chapterId, pageId);
-        return chapterContentRepository
-            .findByNovelIdAndChapterIdAndPageId(novelId, chapterId, pageId)
-            .map(chapterContentMapper::toDto);
+        return chapterContentRepository.findByNovelIdAndChapterIdAndPageId(novelId, chapterId, pageId).map(chapterContentMapper::toDto);
     }
-
 
     public String readChapterContent(Long novelId, Long chapterId, Long pageId) throws InterruptedException {
         String cacheKey = CACHE_KEY_PREFIX + novelId + "--" + chapterId + "--" + pageId;
@@ -230,7 +269,6 @@ public class ChapterContentService {
                 byte[] compressed = content.getCompressed();
 
                 return isGone(bucket, compressed);
-
             } finally {
                 lock.unlock();
             }
@@ -254,22 +292,15 @@ public class ChapterContentService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("chapter.id").ascending().and(Sort.by("pageId").ascending()));
         return chapterContentRepository.findByNovelId(novelId, pageable);
     }
+
     public void deleteChapterContents(Long novelId, Long chapterId) {
-
-
         // 删除数据库中章节分页内容
         List<ChapterContent> contents = chapterContentRepository.findByNovelIdAndChapterId(novelId, chapterId);
         chapterContentRepository.deleteAll(contents);
-
-        // 清理缓存和布隆过滤器
-        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
+        // 清理缓存
         for (ChapterContent content : contents) {
             Long pageId = content.getPageId();
-            String redisKey = CACHE_KEY_PREFIX + novelId + "--" + chapterId + "--" + pageId;
-            redissonClient.getBucket(redisKey).delete();
-
+            invalidateCache(novelId, chapterId, pageId);
         }
     }
-
-
 }
