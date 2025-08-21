@@ -2,7 +2,7 @@
 name: airead
 services:
   mysql:
-    image: mysql:9.2.0
+    image: 1ms.run/mysql:9.2.0
     volumes:
       - ./config/mysql:/etc/mysql/conf.d
     environment:
