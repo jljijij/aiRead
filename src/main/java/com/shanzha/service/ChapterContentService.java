@@ -15,8 +15,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RBloomFilter;
 import org.redisson.api.RBucket;
+import org.redisson.api.RCountableBloomFilter;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
@@ -86,7 +86,7 @@ public class ChapterContentService {
     @EventListener(ApplicationReadyEvent.class)
     @Transactional(readOnly = true)
     public void initBloomFilter() {
-        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
+        RCountableBloomFilter<String> bloomFilter = redissonClient.getCountableBloomFilter(BLOOM_FILTER_NAME);
         // tryInit 本身就是幂等的。返回 true 表示“刚初始化”，false 表示“已存在”
         boolean firstInit = bloomFilter.tryInit(EXPECTED_INSERTIONS, FALSE_PROBABILITY);
         if (!firstInit) {
@@ -235,7 +235,7 @@ public class ChapterContentService {
         String bloomKey = buildChapterKey(novelId, chapterId, pageId);
 
         // 1. 先通过布隆过滤器判断是否可能存在
-        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
+        RCountableBloomFilter<String> bloomFilter = redissonClient.getCountableBloomFilter(BLOOM_FILTER_NAME);
         if (!bloomFilter.contains(bloomKey)) {
             throw new BusinessException(CommonCodeMsg.NOT_FIND); // 提前返回，不进缓存和数据库
         }
@@ -295,7 +295,7 @@ public class ChapterContentService {
         // 删除数据库中章节分页内容
         List<ChapterContent> contents = chapterContentRepository.findByNovelIdAndChapterId(novelId, chapterId);
         chapterContentRepository.deleteAll(contents);
-        RCountableBloomFilter<String> bloomFilter = (RCountableBloomFilter<String>) redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
+        RCountableBloomFilter<String> bloomFilter = redissonClient.getCountableBloomFilter(BLOOM_FILTER_NAME);
         // 清理缓存
         for (ChapterContent content : contents) {
             Long pageId = content.getPageId();
