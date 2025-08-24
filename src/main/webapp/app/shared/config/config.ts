@@ -30,6 +30,7 @@ import { faSync } from '@fortawesome/free-solid-svg-icons/faSync';
 import { faTachometerAlt } from '@fortawesome/free-solid-svg-icons/faTachometerAlt';
 import { faTasks } from '@fortawesome/free-solid-svg-icons/faTasks';
 import { faThList } from '@fortawesome/free-solid-svg-icons/faThList';
+import { faTicketAlt } from '@fortawesome/free-solid-svg-icons/faTicketAlt';
 import { faTimesCircle } from '@fortawesome/free-solid-svg-icons/faTimesCircle';
 import { faTimes } from '@fortawesome/free-solid-svg-icons/faTimes';
 import { faTrash } from '@fortawesome/free-solid-svg-icons/faTrash';
@@ -72,6 +73,7 @@ export function initFortAwesome(vue) {
     faTachometerAlt,
     faTasks,
     faThList,
+    faTicketAlt,
     faTimes,
     faTimesCircle,
     faTrash,
