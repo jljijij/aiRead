@@ -30,8 +30,6 @@ spring:
     enabled: true
     change-log: classpath:config/liquibase/master.xml
 
-
-
   cache:
     type: jcache
     jcache:
@@ -245,17 +243,14 @@ jhipster:
     content-security-policy: "default-src 'self'; frame-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://storage.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:"
 minio:
   endpoint: http://8.134.23.195:9000
-  access-key: admin
-  secret-key: admin123
+  access-key: minioadmin
+  secret-key: minioadmin
   bucket: novel
 
 rocketmq:
   name-server: 192.168.0.107:9876
   producer:
     group: novel-group
-
-
-
 
 # jhipster-needle-add-application-yaml-document
 ---
