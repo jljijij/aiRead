@@ -32,7 +32,7 @@ describe('Alert Service test suite', () => {
   });
 
   it('should show not reachable toast when http status = 0', async () => {
-    const message = 'Server not reachable';
+    const message = '服务器无法访问';
     const httpErrorResponse = {
       status: 0,
     };
@@ -105,7 +105,7 @@ describe('Alert Service test suite', () => {
   });
 
   it('should show error toast when http status = 404', async () => {
-    const message = 'The page does not exist.';
+    const message = '该页面不存在.';
     const httpErrorResponse = {
       status: 404,
     };

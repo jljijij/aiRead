@@ -24,6 +24,10 @@
             <span>首页</span>
           </span>
         </b-nav-item>
+        <b-nav-item to="/coupons" v-if="authenticated">
+          <font-awesome-icon icon="gift" />
+          <span>我的优惠券</span>
+        </b-nav-item>
         <b-nav-item-dropdown right id="entity-menu" v-if="authenticated" active-class="active" class="pointer" data-cy="entity">
           <template #button-content>
             <span class="navbar-dropdown-menu">
