@@ -6,11 +6,10 @@ import lombok.Getter;
  * 阅读状态枚举
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Getter
 public enum ReadStatEnum {
-
     NOT_READ(0, "未读"),
     READ(1, "已读");
 

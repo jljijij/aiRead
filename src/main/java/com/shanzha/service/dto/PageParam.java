@@ -1,16 +1,15 @@
 package com.shanzha.service.dto;
 
 import lombok.Data;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.domain.PageRequest;
-
 
 /**
  * 数据库分页参数
  *
  * @author louzai
- * @date 2022-07-120
+ * @date 2024-07-120
  */
 @Data
 public class PageParam {
@@ -19,8 +18,6 @@ public class PageParam {
     public static final Long DEFAULT_PAGE_SIZE = 10L;
 
     public static final Long TOP_PAGE_SIZE = 4L;
-
-
 
     private long pageNum;
 
@@ -54,6 +51,7 @@ public class PageParam {
     public static String getLimitSql(PageParam pageParam) {
         return String.format("limit %s,%s", pageParam.offset, pageParam.limit);
     }
+
     public static Pageable toPageable(PageParam pageParam) {
         int page = Math.max((int) pageParam.getPageNum() - 1, 0); // PageRequest 页码从 0 开始
         int size = (int) pageParam.getPageSize();
@@ -82,5 +80,4 @@ public class PageParam {
     public static Pageable toPageableAsc(PageParam pageParam, String sortBy) {
         return toPageable(pageParam, Sort.by(Sort.Direction.ASC, sortBy));
     }
-
 }

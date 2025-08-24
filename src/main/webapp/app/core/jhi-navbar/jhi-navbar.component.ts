@@ -6,11 +6,13 @@ import type AccountService from '@/account/account.service';
 import EntitiesMenu from '@/entities/entities-menu.vue';
 
 import { useStore } from '@/store';
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 
 export default defineComponent({
   compatConfig: { MODE: 3 },
   name: 'JhiNavbar',
   components: {
+    FontAwesomeIcon,
     'entities-menu': EntitiesMenu,
   },
   setup() {

@@ -1,23 +1,23 @@
 package com.shanzha.service.dto;
 
 import com.shanzha.domain.enumeration.ChatAnswerTypeEnum;
-import lombok.Data;
-import lombok.experimental.Accessors;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 一次qa的聊天记录
  *
- * @author YiHui
+ * @author zhoubin
  * @date 2023/6/9
  */
 @Data
 @Accessors(chain = true)
 public class ChatItemVo implements Serializable, Cloneable {
+
     private static final long serialVersionUID = 7230339040247758226L;
     /**
      * 唯一的聊天id，不要求存在，主要用于简化流式输出时，前端对返回结果的处理
@@ -55,6 +55,7 @@ public class ChatItemVo implements Serializable, Cloneable {
      * 回答的内容类型，文本、JSON 字符串
      */
     private ChatAnswerTypeEnum answerType;
+
     public ChatItemVo initQuestion(String question) {
         this.question = question;
         this.questionTime = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss").format(LocalDateTime.now());

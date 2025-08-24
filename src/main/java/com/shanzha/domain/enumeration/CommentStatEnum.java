@@ -6,11 +6,10 @@ import lombok.Getter;
  * 评论状态枚举
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Getter
 public enum CommentStatEnum {
-
     NOT_COMMENT(0, "未评论"),
     COMMENT(1, "已评论"),
     DELETE_COMMENT(2, "删除评论");

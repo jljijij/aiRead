@@ -1,7 +1,7 @@
 package com.shanzha.domain.enumeration;
 
 /**
- * @author YiHui
+ * @author zhoubin
  * @date 2023/6/15
  */
 public enum AiChatStatEnum {
@@ -26,8 +26,7 @@ public enum AiChatStatEnum {
     /**
      * 一次问答中，最后一次的回复
      */
-    END(2),
-    ;
+    END(2);
 
     private int state;
 

@@ -1,30 +1,28 @@
 package com.shanzha.service;
 
-
 import com.google.common.collect.Maps;
 import com.shanzha.utils.JsonUtil;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.dao.DataAccessException;
-import org.springframework.data.redis.connection.RedisConnection;
-
-import org.springframework.data.redis.connection.zset.Tuple;
-import org.springframework.data.redis.core.RedisCallback;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
-import org.springframework.util.CollectionUtils;
-
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.zset.Tuple;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.util.CollectionUtils;
 
 /**
- * @author YiHui
+ * @author zhoubin
  * @date 2023/2/7
  */
 public class RedisClient {
+
     private static final Charset CODE = StandardCharsets.UTF_8;
     private static final String KEY_PREFIX = "pai_";
     private static RedisTemplate<String, String> template;
@@ -49,7 +47,6 @@ public class RedisClient {
      * @return
      */
     public static <T> byte[] valBytes(T val) {
-
         if (val instanceof String) {
             return ((String) val).getBytes(CODE);
         } else {
@@ -95,11 +92,14 @@ public class RedisClient {
      * @return
      */
     public static String getStr(String key) {
-        return template.execute((RedisCallback<String>) con -> {
-            byte[] val = con.get(keyBytes(key));
-            return val == null ? null : new String(val);
-        });
+        return template.execute(
+            (RedisCallback<String>) con -> {
+                byte[] val = con.get(keyBytes(key));
+                return val == null ? null : new String(val);
+            }
+        );
     }
+
     /**
      * 获取 ZSet 的前 N 个元素（倒序），带 score。
      *
@@ -108,22 +108,25 @@ public class RedisClient {
      * @return Map<member, score>
      */
     public static Map<String, Double> getTopZSetWithScore(String key, int topN) {
-        Set<ZSetOperations.TypedTuple<String>> topSet =
-            template.opsForZSet().reverseRangeWithScores(key, 0, topN - 1);
+        Set<ZSetOperations.TypedTuple<String>> topSet = template.opsForZSet().reverseRangeWithScores(key, 0, topN - 1);
 
         if (topSet == null || topSet.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        return topSet.stream()
+        return topSet
+            .stream()
             .filter(t -> t.getValue() != null && t.getScore() != null)
-            .collect(Collectors.toMap(
-                ZSetOperations.TypedTuple::getValue,
-                ZSetOperations.TypedTuple::getScore,
-                (a, b) -> b,
-                LinkedHashMap::new // 保持顺序
-            ));
+            .collect(
+                Collectors.toMap(
+                    ZSetOperations.TypedTuple::getValue,
+                    ZSetOperations.TypedTuple::getScore,
+                    (a, b) -> b,
+                    LinkedHashMap::new // 保持顺序
+                )
+            );
     }
+
     /**
      * 设置缓存
      *
@@ -131,10 +134,12 @@ public class RedisClient {
      * @param value
      */
     public static void setStr(String key, String value) {
-        template.execute((RedisCallback<Void>) con -> {
-            con.set(keyBytes(key), valBytes(value));
-            return null;
-        });
+        template.execute(
+            (RedisCallback<Void>) con -> {
+                con.set(keyBytes(key), valBytes(value));
+                return null;
+            }
+        );
     }
 
     /**
@@ -153,10 +158,12 @@ public class RedisClient {
      * @param expire 有效期，s为单位
      */
     public static void expire(String key, Long expire) {
-        template.execute((RedisCallback<Void>) connection -> {
-            connection.expire(keyBytes(key), expire);
-            return null;
-        });
+        template.execute(
+            (RedisCallback<Void>) connection -> {
+                connection.expire(keyBytes(key), expire);
+                return null;
+            }
+        );
     }
 
     /**
@@ -168,12 +175,14 @@ public class RedisClient {
      * @return
      */
     public static Boolean setStrWithExpire(String key, String value, Long expire) {
-        return template.execute(new RedisCallback<Boolean>() {
-            @Override
-            public Boolean doInRedis(RedisConnection redisConnection) throws DataAccessException {
-                return redisConnection.setEx(keyBytes(key), expire, valBytes(value));
+        return template.execute(
+            new RedisCallback<Boolean>() {
+                @Override
+                public Boolean doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                    return redisConnection.setEx(keyBytes(key), expire, valBytes(value));
+                }
             }
-        });
+        );
     }
 
     public static <T> Map<String, T> hGetAll(String key, Class<T> clz) {
@@ -194,14 +203,16 @@ public class RedisClient {
     }
 
     public static <T> T hGet(String key, String field, Class<T> clz) {
-        return template.execute((RedisCallback<T>) con -> {
-            byte[] records = con.hGet(keyBytes(key), valBytes(field));
-            if (records == null) {
-                return null;
-            }
+        return template.execute(
+            (RedisCallback<T>) con -> {
+                byte[] records = con.hGet(keyBytes(key), valBytes(field));
+                if (records == null) {
+                    return null;
+                }
 
-            return toObj(records, clz);
-        });
+                return toObj(records, clz);
+            }
+        );
     }
 
     /**
@@ -217,21 +228,25 @@ public class RedisClient {
     }
 
     public static <T> Boolean hDel(String key, String field) {
-        return template.execute(new RedisCallback<Boolean>() {
-            @Override
-            public Boolean doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.hDel(keyBytes(key), valBytes(field)) > 0;
+        return template.execute(
+            new RedisCallback<Boolean>() {
+                @Override
+                public Boolean doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.hDel(keyBytes(key), valBytes(field)) > 0;
+                }
             }
-        });
+        );
     }
 
     public static <T> Boolean hSet(String key, String field, T ans) {
-        return template.execute(new RedisCallback<Boolean>() {
-            @Override
-            public Boolean doInRedis(RedisConnection redisConnection) throws DataAccessException {
-                return redisConnection.hSet(keyBytes(key), valBytes(field), valBytes(ans));
+        return template.execute(
+            new RedisCallback<Boolean>() {
+                @Override
+                public Boolean doInRedis(RedisConnection redisConnection) throws DataAccessException {
+                    return redisConnection.hSet(keyBytes(key), valBytes(field), valBytes(ans));
+                }
             }
-        });
+        );
     }
 
     public static <T> void hMSet(String key, Map<String, T> fields) {
@@ -239,26 +254,30 @@ public class RedisClient {
         for (Map.Entry<String, T> entry : fields.entrySet()) {
             val.put(valBytes(entry.getKey()), valBytes(entry.getValue()));
         }
-        template.execute((RedisCallback<Object>) connection -> {
-            connection.hMSet(keyBytes(key), val);
-            return null;
-        });
+        template.execute(
+            (RedisCallback<Object>) connection -> {
+                connection.hMSet(keyBytes(key), val);
+                return null;
+            }
+        );
     }
 
     public static <T> Map<String, T> hMGet(String key, final List<String> fields, Class<T> clz) {
-        return template.execute(new RedisCallback<Map<String, T>>() {
-            @Override
-            public Map<String, T> doInRedis(RedisConnection connection) throws DataAccessException {
-                byte[][] f = new byte[fields.size()][];
-                IntStream.range(0, fields.size()).forEach(i -> f[i] = valBytes(fields.get(i)));
-                List<byte[]> ans = connection.hMGet(keyBytes(key), f);
-                Map<String, T> result = Maps.newHashMapWithExpectedSize(fields.size());
-                IntStream.range(0, fields.size()).forEach(i -> {
-                    result.put(fields.get(i), toObj(ans.get(i), clz));
-                });
-                return result;
+        return template.execute(
+            new RedisCallback<Map<String, T>>() {
+                @Override
+                public Map<String, T> doInRedis(RedisConnection connection) throws DataAccessException {
+                    byte[][] f = new byte[fields.size()][];
+                    IntStream.range(0, fields.size()).forEach(i -> f[i] = valBytes(fields.get(i)));
+                    List<byte[]> ans = connection.hMGet(keyBytes(key), f);
+                    Map<String, T> result = Maps.newHashMapWithExpectedSize(fields.size());
+                    IntStream.range(0, fields.size()).forEach(i -> {
+                        result.put(fields.get(i), toObj(ans.get(i), clz));
+                    });
+                    return result;
+                }
             }
-        });
+        );
     }
 
     /**
@@ -269,12 +288,14 @@ public class RedisClient {
      * @return
      */
     public static <T> Boolean sIsMember(String key, T value) {
-        return template.execute(new RedisCallback<Boolean>() {
-            @Override
-            public Boolean doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.sIsMember(keyBytes(key), valBytes(value));
+        return template.execute(
+            new RedisCallback<Boolean>() {
+                @Override
+                public Boolean doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.sIsMember(keyBytes(key), valBytes(value));
+                }
             }
-        });
+        );
     }
 
     /**
@@ -286,16 +307,18 @@ public class RedisClient {
      * @return
      */
     public static <T> Set<T> sGetAll(String key, Class<T> clz) {
-        return template.execute(new RedisCallback<Set<T>>() {
-            @Override
-            public Set<T> doInRedis(RedisConnection connection) throws DataAccessException {
-                Set<byte[]> set = connection.sMembers(keyBytes(key));
-                if (CollectionUtils.isEmpty(set)) {
-                    return Collections.emptySet();
+        return template.execute(
+            new RedisCallback<Set<T>>() {
+                @Override
+                public Set<T> doInRedis(RedisConnection connection) throws DataAccessException {
+                    Set<byte[]> set = connection.sMembers(keyBytes(key));
+                    if (CollectionUtils.isEmpty(set)) {
+                        return Collections.emptySet();
+                    }
+                    return set.stream().map(s -> toObj(s, clz)).collect(Collectors.toSet());
                 }
-                return set.stream().map(s -> toObj(s, clz)).collect(Collectors.toSet());
             }
-        });
+        );
     }
 
     /**
@@ -307,12 +330,17 @@ public class RedisClient {
      * @return
      */
     public static <T> boolean sPut(String key, T val) {
-        return template.execute(new RedisCallback<Long>() {
-            @Override
-            public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.sAdd(keyBytes(key), valBytes(val));
-            }
-        }) > 0;
+        return (
+            template.execute(
+                new RedisCallback<Long>() {
+                    @Override
+                    public Long doInRedis(RedisConnection connection) throws DataAccessException {
+                        return connection.sAdd(keyBytes(key), valBytes(val));
+                    }
+                }
+            ) >
+            0
+        );
     }
 
     /**
@@ -323,15 +351,16 @@ public class RedisClient {
      * @param <T>
      */
     public static <T> void sDel(String key, T val) {
-        template.execute(new RedisCallback<Void>() {
-            @Override
-            public Void doInRedis(RedisConnection connection) throws DataAccessException {
-                connection.sRem(keyBytes(key), valBytes(val));
-                return null;
+        template.execute(
+            new RedisCallback<Void>() {
+                @Override
+                public Void doInRedis(RedisConnection connection) throws DataAccessException {
+                    connection.sRem(keyBytes(key), valBytes(val));
+                    return null;
+                }
             }
-        });
+        );
     }
-
 
     /**
      * 分数更新
@@ -342,12 +371,14 @@ public class RedisClient {
      * @return
      */
     public static Double zIncrBy(String key, String value, Integer score) {
-        return template.execute(new RedisCallback<Double>() {
-            @Override
-            public Double doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.zIncrBy(keyBytes(key), score, valBytes(value));
+        return template.execute(
+            new RedisCallback<Double>() {
+                @Override
+                public Double doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.zIncrBy(keyBytes(key), score, valBytes(value));
+                }
             }
-        });
+        );
     }
 
     public static ImmutablePair<Integer, Double> zRankInfo(String key, String value) {
@@ -364,21 +395,25 @@ public class RedisClient {
      * @return
      */
     public static Double zScore(String key, String value) {
-        return template.execute(new RedisCallback<Double>() {
-            @Override
-            public Double doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.zScore(keyBytes(key), valBytes(value));
+        return template.execute(
+            new RedisCallback<Double>() {
+                @Override
+                public Double doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.zScore(keyBytes(key), valBytes(value));
+                }
             }
-        });
+        );
     }
 
     public static Integer zRank(String key, String value) {
-        return template.execute(new RedisCallback<Integer>() {
-            @Override
-            public Integer doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.zRank(keyBytes(key), valBytes(value)).intValue();
+        return template.execute(
+            new RedisCallback<Integer>() {
+                @Override
+                public Integer doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.zRank(keyBytes(key), valBytes(value)).intValue();
+                }
             }
-        });
+        );
     }
 
     /**
@@ -389,61 +424,70 @@ public class RedisClient {
      * @return
      */
     public static List<ImmutablePair<String, Double>> zTopNScore(String key, int n) {
-        return template.execute(new RedisCallback<List<ImmutablePair<String, Double>>>() {
-            @Override
-            public List<ImmutablePair<String, Double>> doInRedis(RedisConnection connection) throws DataAccessException {
-                Set<Tuple> set = connection.zRevRangeWithScores(keyBytes(key), 0, n - 1);
-                if (set == null) {
-                    return Collections.emptyList();
+        return template.execute(
+            new RedisCallback<List<ImmutablePair<String, Double>>>() {
+                @Override
+                public List<ImmutablePair<String, Double>> doInRedis(RedisConnection connection) throws DataAccessException {
+                    Set<Tuple> set = connection.zRevRangeWithScores(keyBytes(key), 0, n - 1);
+                    if (set == null) {
+                        return Collections.emptyList();
+                    }
+                    return set
+                        .stream()
+                        .map(tuple -> ImmutablePair.of(toObj(tuple.getValue(), String.class), tuple.getScore()))
+                        .collect(Collectors.toList());
                 }
-                return set.stream()
-                    .map(tuple -> ImmutablePair.of(toObj(tuple.getValue(), String.class), tuple.getScore()))
-                    .collect(Collectors.toList());
             }
-        });
+        );
     }
 
-
     public static <T> Long lPush(String key, T val) {
-        return template.execute(new RedisCallback<Long>() {
-            @Override
-            public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.lPush(keyBytes(key), valBytes(val));
+        return template.execute(
+            new RedisCallback<Long>() {
+                @Override
+                public Long doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.lPush(keyBytes(key), valBytes(val));
+                }
             }
-        });
+        );
     }
 
     public static <T> Long rPush(String key, T val) {
-        return template.execute(new RedisCallback<Long>() {
-            @Override
-            public Long doInRedis(RedisConnection connection) throws DataAccessException {
-                return connection.rPush(keyBytes(key), valBytes(val));
+        return template.execute(
+            new RedisCallback<Long>() {
+                @Override
+                public Long doInRedis(RedisConnection connection) throws DataAccessException {
+                    return connection.rPush(keyBytes(key), valBytes(val));
+                }
             }
-        });
+        );
     }
 
     public static <T> List<T> lRange(String key, int start, int size, Class<T> clz) {
-        return template.execute(new RedisCallback<List<T>>() {
-
-            @Override
-            public List<T> doInRedis(RedisConnection connection) throws DataAccessException {
-                List<byte[]> list = connection.lRange(keyBytes(key), start, size);
-                if (CollectionUtils.isEmpty(list)) {
-                    return new ArrayList<>();
+        return template.execute(
+            new RedisCallback<List<T>>() {
+                @Override
+                public List<T> doInRedis(RedisConnection connection) throws DataAccessException {
+                    List<byte[]> list = connection.lRange(keyBytes(key), start, size);
+                    if (CollectionUtils.isEmpty(list)) {
+                        return new ArrayList<>();
+                    }
+                    return list.stream().map(k -> toObj(k, clz)).collect(Collectors.toList());
                 }
-                return list.stream().map(k -> toObj(k, clz)).collect(Collectors.toList());
             }
-        });
+        );
     }
 
     public static void lTrim(String key, int start, int size) {
-        template.execute(new RedisCallback<Void>() {
-            @Override
-            public Void doInRedis(RedisConnection connection) throws DataAccessException {
-                connection.lTrim(keyBytes(key), start, size);
-                return null;
+        template.execute(
+            new RedisCallback<Void>() {
+                @Override
+                public Void doInRedis(RedisConnection connection) throws DataAccessException {
+                    connection.lTrim(keyBytes(key), start, size);
+                    return null;
+                }
             }
-        });
+        );
     }
 
     private static <T> T toObj(byte[] ans, Class<T> clz) {
@@ -458,7 +502,6 @@ public class RedisClient {
         return JsonUtil.toObj(new String(ans, CODE), clz);
     }
 
-
     public static PipelineAction pipelineAction() {
         return new PipelineAction();
     }
@@ -467,6 +510,7 @@ public class RedisClient {
      * redis 管道执行的封装链路
      */
     public static class PipelineAction {
+
         private List<Runnable> run = new ArrayList<>();
 
         private RedisConnection connection;
@@ -482,11 +526,13 @@ public class RedisClient {
         }
 
         public void execute() {
-            template.executePipelined((RedisCallback<Object>) connection -> {
-                PipelineAction.this.connection = connection;
-                run.forEach(Runnable::run);
-                return null;
-            });
+            template.executePipelined(
+                (RedisCallback<Object>) connection -> {
+                    PipelineAction.this.connection = connection;
+                    run.forEach(Runnable::run);
+                    return null;
+                }
+            );
         }
     }
 

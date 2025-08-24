@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,8 +12,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * @author YiHui
- * @date 2022/9/5
+ * @author zhoubin
+ * @date 2024/9/5
  */
 public class JsonUtil {
 
@@ -57,7 +56,7 @@ public class JsonUtil {
      * 序列换成json时,将所有的long变成string
      * 因为js中得数字类型不能包含所有的java long值
      */
-    public static SimpleModule bigIntToStrsimpleModule() {
+    public static com.fasterxml.jackson.databind.Module bigIntToStrsimpleModule() {
         SimpleModule simpleModule = new SimpleModule();
         simpleModule.addSerializer(Long.class, newSerializer(s -> String.valueOf(s)));
         simpleModule.addSerializer(Long.TYPE, ToStringSerializer.instance);

@@ -6,7 +6,7 @@ import lombok.Data;
  * 评论列表入参
  *
  * @author louzai
- * @date 2022-07-24
+ * @date 2024-07-24
  */
 @Data
 public class CommentSaveReq {

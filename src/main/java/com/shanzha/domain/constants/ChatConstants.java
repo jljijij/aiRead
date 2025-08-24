@@ -1,17 +1,17 @@
 package com.shanzha.domain.constants;
 
 import com.shanzha.service.dto.ChatItemVo;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 /**
- * @author YiHui
+ * @author zhoubin
  * @date 2023/6/2
  */
 public final class ChatConstants {
+
     /**
      * 记录每个用户的使用次数
      */
@@ -50,7 +50,7 @@ public final class ChatConstants {
      * @return
      */
     public static String getAiHistoryRecordsKey(String user) {
-        return "chat.history."  + "." + user;
+        return "chat.history." + "." + user;
     }
 
     /**
@@ -85,16 +85,13 @@ public final class ChatConstants {
      */
     public static final long QAS_TIME_INTERVAL = 20_000;
 
-
     public static final String CHAT_REPLY_RECOMMEND = "请注册技术派之后再来体验吧，技术派官网： \n https://paicoding.com";
     public static final String CHAT_REPLY_BEGIN = "让我们开始体验ChatGPT的魅力吧~";
     public static final String CHAT_REPLY_OVER = "体验结束，让我们下次再见吧~";
     public static final String CHAT_REPLY_CNT_OVER = "次数使用完了哦，勾搭一下群主，多申请点使用次数吧~\n微信：itwanger";
 
-
     public static final String CHAT_REPLY_TIME_WAITING = "chatgpt还在努力回答中，请等待几秒之后再问一次吧....";
     public static final String CHAT_REPLY_QAS_TOO_FAST = "提问太频繁了，喝一杯咖啡，暂缓一下...";
-
 
     public static final String TOKEN_OVER = "您的免费次数已经使用完毕了!";
 
@@ -107,7 +104,6 @@ public final class ChatConstants {
      * 请切换到其他大模型
      */
     public static final String SWITCH_TO_OTHER_MODEL = "当前模型还在开发当中，请右上角下拉框切换到其他模型";
-
 
     public static final String SENSITIVE_QUESTION = "提问中包含敏感词:%s，请微信联系二哥「itwanger」加入白名单!";
 

@@ -1,21 +1,21 @@
 package com.shanzha.service.dto;
 
-import lombok.Data;
-import lombok.experimental.Accessors;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 聊天记录
  *
- * @author YiHui
+ * @author zhoubin
  * @date 2023/6/9
  */
 @Data
 @Accessors(chain = true)
 public class ChatRecordsVo implements Serializable, Cloneable {
+
     private static final long serialVersionUID = -2666259615985932920L;
 
     /**

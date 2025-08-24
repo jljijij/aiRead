@@ -1,13 +1,12 @@
 package com.shanzha.domain.enumeration;
 
-import lombok.Getter;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
 
 /**
- * @author YiHui
- * @date 2022/9/3
+ * @author zhoubin
+ * @date 2024/9/3
  */
 @Getter
 public enum NotifyTypeEnum {
@@ -29,9 +28,7 @@ public enum NotifyTypeEnum {
     LOGIN(6, "用户登录"),
 
     PAYING(6, "支付中通知"),
-    PAY(6, "支付结果通知"),
-    ;
-
+    PAY(6, "支付结果通知");
 
     /**
      * 表示消息类型： 1-6 对应的时评论/回复/点赞/关注消息/系统消息等

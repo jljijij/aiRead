@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * 评论树状结构
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Data
 public class BaseCommentDTO implements Comparable<BaseCommentDTO> {

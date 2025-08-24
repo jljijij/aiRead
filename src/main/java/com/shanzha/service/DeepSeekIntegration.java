@@ -5,6 +5,10 @@ import com.shanzha.config.DeepSeekConf;
 import com.shanzha.domain.constants.ChatConstants;
 import com.shanzha.service.dto.ChatItemVo;
 import com.shanzha.utils.JsonUtil;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,15 +25,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 /**
  * DeepSeek的集成类，主要负责与DeepSeek进行交互
  *
- * @author YiHui
+ * @author zhoubin
  * @date 2025/2/6
  */
 @Slf4j
@@ -37,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 @DependsOn("deepSeekConf")
 @Data
 public class DeepSeekIntegration {
+
     @Autowired
     private DeepSeekConf deepSeekConf;
 
@@ -45,10 +45,10 @@ public class DeepSeekIntegration {
     @PostConstruct
     public void init() {
         this.okHttpClient = new OkHttpClient.Builder()
-                .connectTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS)   // 建立连接的超时时间
-                .readTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS)  // 建立连接后读取数据的超时时间
-                .writeTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS)
-                .build();
+            .connectTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS) // 建立连接的超时时间
+            .readTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS) // 建立连接后读取数据的超时时间
+            .writeTimeout(deepSeekConf.getTimeout(), TimeUnit.SECONDS)
+            .build();
     }
 
     /**
@@ -87,7 +87,6 @@ public class DeepSeekIntegration {
         this.executeStreamChat(msgList, listener);
     }
 
-
     /**
      * 使用流式聊天接口发送聊天请求
      * 该方法将聊天请求转换为流式请求，并使用EventSource监听器处理响应
@@ -107,11 +106,11 @@ public class DeepSeekIntegration {
             String body = JsonUtil.toStr(req);
             // 构建请求对象，指定URL、认证头、内容类型头以及请求体
             Request request = new Request.Builder()
-                    .url(deepSeekConf.getApiHost() + "/chat/completions")
-                    .addHeader("Authorization", "Bearer " + deepSeekConf.getApiKey())
-                    .addHeader("Content-Type", "application/json")
-                    .post(RequestBody.create(MediaType.parse(ContentType.JSON.getValue()), body))
-                    .build();
+                .url(deepSeekConf.getApiHost() + "/chat/completions")
+                .addHeader("Authorization", "Bearer " + deepSeekConf.getApiKey())
+                .addHeader("Content-Type", "application/json")
+                .post(RequestBody.create(MediaType.parse(ContentType.JSON.getValue()), body))
+                .build();
             // 使用工厂创建新的EventSource，并传入请求和监听器
             factory.newEventSource(request, listener);
         } catch (Exception e) {
@@ -134,6 +133,7 @@ public class DeepSeekIntegration {
      */
     @Data
     public static class ChatReq {
+
         /**
          * 模型，官方当前支持两个：
          * 1. deepseek-chat
@@ -156,6 +156,7 @@ public class DeepSeekIntegration {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ChatMsg {
+
         /**
          * 角色：用于AI了解它应该如何行为以及谁在发起调用
          * - system: 了解它应该如何行为以及谁在发起调用， 如 content = 你现在是一个资深后端java工程师

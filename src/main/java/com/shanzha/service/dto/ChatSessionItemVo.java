@@ -1,17 +1,17 @@
 package com.shanzha.service.dto;
 
-import lombok.Data;
-
 import java.io.Serializable;
+import lombok.Data;
 
 /**
  * 对话
  *
- * @author YiHui
+ * @author zhoubin
  * @date 2025/2/7
  */
 @Data
 public class ChatSessionItemVo implements Serializable {
+
     private static final long serialVersionUID = 4083274108548272765L;
     /**
      * 对话主题
@@ -37,5 +37,4 @@ public class ChatSessionItemVo implements Serializable {
      * 问答次数
      */
     private int qasCnt;
-
 }

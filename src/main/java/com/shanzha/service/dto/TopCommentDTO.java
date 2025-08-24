@@ -1,19 +1,19 @@
 package com.shanzha.service.dto;
 
-import lombok.Data;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Data;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 评论树状结构
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Data
 public class TopCommentDTO extends BaseCommentDTO {
+
     /**
      * 评论数量
      */

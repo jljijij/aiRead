@@ -6,11 +6,10 @@ import lombok.Getter;
  * 点赞状态枚举
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Getter
 public enum PraiseStatEnum {
-
     NOT_PRAISE(0, "未点赞"),
     PRAISE(1, "已点赞"),
     CANCEL_PRAISE(2, "取消点赞");

@@ -6,11 +6,10 @@ import lombok.Getter;
  * 收藏状态枚举
  *
  * @author louzai
- * @since 2022/7/19
+ * @since 2024/7/19
  */
 @Getter
 public enum CollectionStatEnum {
-
     NOT_COLLECTION(0, "未收藏"),
     COLLECTION(1, "已收藏"),
     CANCEL_COLLECTION(2, "取消收藏");
