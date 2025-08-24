@@ -5,6 +5,7 @@ import com.shanzha.service.ChapterTrafficMonitor;
 import com.shanzha.service.NovelRankService;
 import com.shanzha.service.dto.RedisContent;
 import java.util.concurrent.*;
+import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;

@@ -16,7 +16,6 @@ import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.info.GitProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.KeyGenerator;
-import org.springframework.context.annotation.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import tech.jhipster.config.JHipsterProperties;
@@ -88,9 +87,9 @@ public class CacheConfiguration {
             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
-            MutableConfiguration<Object, Object> novelCacheConfiguration = new MutableConfiguration<>(
-                jcacheConfiguration
-            ).setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)));
+            MutableConfiguration<Object, Object> novelCacheConfiguration = new MutableConfiguration<>();
+            novelCacheConfiguration.setStatisticsEnabled(true);
+            novelCacheConfiguration.setExpiryPolicyFactory(CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.HOURS, 1)));
             createCache(cm, com.shanzha.domain.Novel.class.getName(), novelCacheConfiguration);
             createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
             createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);

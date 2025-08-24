@@ -1,6 +1,5 @@
 package com.shanzha.service;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.plexpt.chatgpt.listener.AbstractStreamListener;
 import com.shanzha.domain.constants.ChatConstants;
@@ -10,6 +9,11 @@ import com.shanzha.security.SecurityUtils;
 import com.shanzha.service.dto.ChatItemVo;
 import com.shanzha.service.dto.ChatRecordsVo;
 import com.shanzha.service.dto.ChatSessionItemVo;
+import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
@@ -22,12 +26,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +40,7 @@ public class ChatService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
     StringRedisTemplate redisTemplate;
 
     ChatHistoryService chatHistoryService;
@@ -52,6 +51,7 @@ public class ChatService {
     protected Integer chatHistoryContextNum;
 
     RedisClient redisClient;
+
     public void handleChat(String question) {
         autoChat(question, this::response);
     }
@@ -61,8 +61,8 @@ public class ChatService {
     }
 
     public void response(ChatRecordsVo response) {
-        String username = SecurityUtils.getCurrentUserLogin().orElseThrow(() ->
-            new IllegalStateException("当前未登录用户无法发送 WebSocket 消息"));
+        String username = SecurityUtils.getCurrentUserLogin()
+            .orElseThrow(() -> new IllegalStateException("当前未登录用户无法发送 WebSocket 消息"));
         messagingTemplate.convertAndSendToUser(username, "/chat/rsp", response);
     }
 
@@ -85,10 +85,7 @@ public class ChatService {
                 if (ans == AiChatStatEnum.END) {
                     // 只有最后一个会话，即ai的回答结束，才需要进行持久化，并计数
                     processAfterSuccessedAnswered(user, newRes);
-                } else if (ans == AiChatStatEnum.ERROR) {
-                    // 执行异常，更新AI模型
-//                    SpringUtil.getBean(ChatFacade.class).refreshAiSourceCache(Sets.newHashSet(source()));
-                }
+                } else if (ans == AiChatStatEnum.ERROR) {}
                 // ai异步返回结果之后，我们将结果推送给前端用户
                 consumer.accept(newRes);
             });
@@ -141,8 +138,6 @@ public class ChatService {
         return res;
     }
 
-
-
     private int queryUserdCnt(Long user) {
         Integer cnt = RedisClient.hGet(ChatConstants.getAiRateKeyPerDay(), String.valueOf(user), Integer.class);
         if (cnt == null) {
@@ -180,11 +175,7 @@ public class ChatService {
     }
 
     private void sendToUser(String username, String sessionId, ChatRecordsVo vo) {
-        messagingTemplate.convertAndSendToUser(
-            username,
-            "/queue/chat/" + sessionId,
-            vo
-        );
+        messagingTemplate.convertAndSendToUser(username, "/queue/chat/" + sessionId, vo);
     }
 
     public AiChatStatEnum doAsyncAnswer(Long user, ChatRecordsVo response, BiConsumer<AiChatStatEnum, ChatRecordsVo> consumer) {
@@ -195,9 +186,9 @@ public class ChatService {
             // 当连接打开时的处理
             @Override
             public void onOpen(EventSource event, Response response) {
-                super.onOpen(event,response);
+                super.onOpen(event, response);
                 if (log.isDebugEnabled()) {
-                    log.debug("正确建立了连接: {}, res: {}", event,response);
+                    log.debug("正确建立了连接: {}, res: {}", event, response);
                 }
             }
 
@@ -212,12 +203,12 @@ public class ChatService {
                 if (item.getAnswerType() != ChatAnswerTypeEnum.STREAM_END) {
                     // 主动结束这一次的对话
                     if (StringUtils.isBlank(lastMessage)) {
-                        item.appendAnswer("大模型超时未返回结果，主动关闭会话；请重新提问吧\n")
+                        item
+                            .appendAnswer("大模型超时未返回结果，主动关闭会话；请重新提问吧\n")
                             .setAnswerType(ChatAnswerTypeEnum.STREAM_END);
                         consumer.accept(AiChatStatEnum.ERROR, response);
                     } else {
-                        item.appendAnswer("\n")
-                            .setAnswerType(ChatAnswerTypeEnum.STREAM_END);
+                        item.appendAnswer("\n").setAnswerType(ChatAnswerTypeEnum.STREAM_END);
                         consumer.accept(AiChatStatEnum.END, response);
                     }
                 }
@@ -240,7 +231,8 @@ public class ChatService {
             @Override
             public void onError(Throwable throwable, String res) {
                 // 返回异常的场景
-                item.appendAnswer("Error:" + (StringUtils.isBlank(res) ? throwable.getMessage() : res))
+                item
+                    .appendAnswer("Error:" + (StringUtils.isBlank(res) ? throwable.getMessage() : res))
                     .setAnswerType(ChatAnswerTypeEnum.STREAM_END);
                 consumer.accept(AiChatStatEnum.ERROR, response);
                 if (log.isDebugEnabled()) {
@@ -250,12 +242,11 @@ public class ChatService {
         };
 
         // 注册回答结束的回调钩子
-        listener.setOnComplate((s) -> {
+        listener.setOnComplate(s -> {
             if (log.isDebugEnabled()) {
                 log.debug("这一轮对话聊天已结束，完整的返回结果是：{}", s);
             }
-            item.appendAnswer("\n")
-                .setAnswerType(ChatAnswerTypeEnum.STREAM_END);
+            item.appendAnswer("\n").setAnswerType(ChatAnswerTypeEnum.STREAM_END);
             consumer.accept(AiChatStatEnum.END, response);
         });
         // 调用深度寻求流式返回的方法
@@ -268,9 +259,10 @@ public class ChatService {
         return 10001L; // mock
     }
 
-
     private String getChatIdKey(Long userId, String chatId) {
-        return StringUtils.isBlank(chatId) ? ChatConstants.getAiHistoryRecordsKey(userId) : ChatConstants.getAiHistoryRecordsKey(userId + ":" + chatId);
+        return StringUtils.isBlank(chatId)
+            ? ChatConstants.getAiHistoryRecordsKey(userId)
+            : ChatConstants.getAiHistoryRecordsKey(userId + ":" + chatId);
     }
 
     public void saveRecord(Long userId, String chatId, ChatItemVo item) {
@@ -284,13 +276,14 @@ public class ChatService {
         try {
             // 将 item 序列化为 JSON 并 lpush 到记录列表中
             String itemJson = objectMapper.writeValueAsString(item);
-            redisTemplate.execute((RedisCallback<Long>) conn ->
-                conn.lPush(key.getBytes(StandardCharsets.UTF_8), itemJson.getBytes(StandardCharsets.UTF_8))
+            redisTemplate.execute(
+                (RedisCallback<Long>) conn -> conn.lPush(key.getBytes(StandardCharsets.UTF_8), itemJson.getBytes(StandardCharsets.UTF_8))
             );
 
             // 获取会话元数据
-            byte[] sessionBytes = redisTemplate.execute((RedisCallback<byte[]>) conn ->
-                conn.hGet(sessionKey.getBytes(StandardCharsets.UTF_8), chatId.getBytes(StandardCharsets.UTF_8))
+            byte[] sessionBytes = redisTemplate.execute(
+                (RedisCallback<byte[]>) conn ->
+                    conn.hGet(sessionKey.getBytes(StandardCharsets.UTF_8), chatId.getBytes(StandardCharsets.UTF_8))
             );
 
             ChatSessionItemVo session;
@@ -298,9 +291,11 @@ public class ChatService {
                 // 不存在则新建会话
                 session = new ChatSessionItemVo();
                 session.setChatId(chatId);
-                session.setTitle(!item.getQuestion().startsWith(ChatConstants.PROMPT_TAG)
-                    ? item.getQuestion()
-                    : item.getQuestion().substring(ChatConstants.PROMPT_TAG.length()));
+                session.setTitle(
+                    !item.getQuestion().startsWith(ChatConstants.PROMPT_TAG)
+                        ? item.getQuestion()
+                        : item.getQuestion().substring(ChatConstants.PROMPT_TAG.length())
+                );
                 session.setCreatTime(System.currentTimeMillis());
                 session.setUpdateTime(session.getCreatTime());
                 session.setQasCnt(1);
@@ -313,20 +308,24 @@ public class ChatService {
 
             // 写入更新后的会话信息
             String sessionJson = objectMapper.writeValueAsString(session);
-            redisTemplate.execute((RedisCallback<Boolean>) conn ->
-                conn.hSet(sessionKey.getBytes(StandardCharsets.UTF_8),
-                    chatId.getBytes(StandardCharsets.UTF_8),
-                    sessionJson.getBytes(StandardCharsets.UTF_8))
+            redisTemplate.execute(
+                (RedisCallback<Boolean>) conn ->
+                    conn.hSet(
+                        sessionKey.getBytes(StandardCharsets.UTF_8),
+                        chatId.getBytes(StandardCharsets.UTF_8),
+                        sessionJson.getBytes(StandardCharsets.UTF_8)
+                    )
             );
 
             // 限制记录长度（注意 zset/ltrim 的 start,end 含义）
             if (session.getQasCnt() > ChatConstants.MAX_HISTORY_RECORD_ITEMS) {
-                redisTemplate.execute((RedisCallback<Void>) conn -> {
-                    conn.lTrim(key.getBytes(StandardCharsets.UTF_8), 0, ChatConstants.MAX_HISTORY_RECORD_ITEMS);
-                    return null;
-                });
+                redisTemplate.execute(
+                    (RedisCallback<Void>) conn -> {
+                        conn.lTrim(key.getBytes(StandardCharsets.UTF_8), 0, ChatConstants.MAX_HISTORY_RECORD_ITEMS);
+                        return null;
+                    }
+                );
             }
-
         } catch (Exception e) {
             // 记录异常
             log.error("Failed to save chat record to Redis", e);
@@ -342,19 +341,15 @@ public class ChatService {
     protected Long incrCnt(Long user) {
         String key = ChatConstants.getAiRateKeyPerDay();
         String field = String.valueOf(user);
-        Long cnt = redisTemplate.execute((RedisCallback<Long>) connection ->
-            connection.hIncrBy(key.getBytes(StandardCharsets.UTF_8),
-                field.getBytes(StandardCharsets.UTF_8),
-                1)
+        Long cnt = redisTemplate.execute(
+            (RedisCallback<Long>) connection ->
+                connection.hIncrBy(key.getBytes(StandardCharsets.UTF_8), field.getBytes(StandardCharsets.UTF_8), 1)
         );
 
         if (cnt != null && cnt == 1L) {
-            redisTemplate.execute((RedisCallback<Boolean>) connection ->
-                connection.expire(key.getBytes(StandardCharsets.UTF_8), 86400L)
-            );
+            redisTemplate.execute((RedisCallback<Boolean>) connection -> connection.expire(key.getBytes(StandardCharsets.UTF_8), 86400L));
             return cnt;
         }
-        return  cnt;
-
+        return cnt;
     }
 }

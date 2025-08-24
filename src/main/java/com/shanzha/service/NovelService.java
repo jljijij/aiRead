@@ -32,7 +32,7 @@ public class NovelService {
 
     private static final Logger LOG = LoggerFactory.getLogger(NovelService.class);
     private static final String RANK_KEY = "novel:read:rank";
-
+    private static final String CACHE_NAME = " com.shanzha.domain.Novel";
     private final NovelRepository novelRepository;
 
     private final NovelMapper novelMapper;
@@ -75,7 +75,7 @@ public class NovelService {
      * @param novelDTO the entity to save.
      * @return the persisted entity.
      */
-    @CachePut(cacheNames = Novel.class.getName(), key = "#result.id")
+    @CachePut(cacheNames = CACHE_NAME, key = "#result.id")
     public NovelDTO save(NovelDTO novelDTO) {
         LOG.debug("Request to save Novel : {}", novelDTO);
         Novel novel = novelMapper.toEntity(novelDTO);
@@ -89,7 +89,7 @@ public class NovelService {
      * @param novelDTO the entity to save.
      * @return the persisted entity.
      */
-    @CachePut(cacheNames = Novel.class.getName(), key = "#result.id")
+    @CachePut(cacheNames = CACHE_NAME, key = "#result.id")
     public NovelDTO update(NovelDTO novelDTO) {
         LOG.debug("Request to update Novel : {}", novelDTO);
         Novel novel = novelMapper.toEntity(novelDTO);
@@ -103,7 +103,7 @@ public class NovelService {
      * @param novelDTO the entity to update partially.
      * @return the persisted entity.
      */
-    @CachePut(cacheNames = Novel.class.getName(), key = "#result.get().id", condition = "#result.isPresent()")
+    @CachePut(cacheNames = CACHE_NAME, key = "#result.get().id", condition = "#result.isPresent()")
     public Optional<NovelDTO> partialUpdate(NovelDTO novelDTO) {
         LOG.debug("Request to partially update Novel : {}", novelDTO);
 
@@ -136,7 +136,7 @@ public class NovelService {
      * @return the entity.
      */
     @Transactional(readOnly = true)
-    @Cacheable(cacheNames = Novel.class.getName(), key = "#id", unless = "#result == null")
+    @Cacheable(cacheNames = CACHE_NAME, key = "#id", unless = "#result == null")
     public Optional<NovelDTO> findOne(Long id) {
         LOG.debug("Request to get Novel : {}", id);
         return novelRepository.findById(id).map(novelMapper::toDto);
@@ -147,7 +147,7 @@ public class NovelService {
      *
      * @param id the id of the entity.
      */
-    @CacheEvict(cacheNames = Novel.class.getName(), key = "#id")
+    @CacheEvict(cacheNames = CACHE_NAME, key = "#id")
     public void delete(Long id) {
         LOG.debug("Request to delete Novel : {}", id);
         novelRepository.deleteById(id);
