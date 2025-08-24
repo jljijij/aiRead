@@ -1,0 +1,1253 @@
+diff --git a/pom.xml b/pom.xml
+index 915847be0cd478e4cda9a6eef73b2a6ece27a236..bb2057ba2042fb1a3e71f5b7cab5d0b1350379fa 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -176,50 +176,55 @@
+             <groupId>org.springframework.security</groupId>
+             <artifactId>spring-security-test</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>org.springdoc</groupId>
+             <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+             <version>${springdoc-openapi-starter-webmvc-api.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>com.fasterxml.jackson.datatype</groupId>
+             <artifactId>jackson-datatype-hibernate6</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>com.fasterxml.jackson.datatype</groupId>
+             <artifactId>jackson-datatype-hppc</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>com.fasterxml.jackson.datatype</groupId>
+             <artifactId>jackson-datatype-jsr310</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>com.fasterxml.jackson.module</groupId>
+             <artifactId>jackson-module-jaxb-annotations</artifactId>
+         </dependency>
++        <dependency>
++            <groupId>com.github.vladimir-bukhtoyarov</groupId>
++            <artifactId>bucket4j-core</artifactId>
++            <version>8.8.1</version>
++        </dependency>
+         <dependency>
+             <groupId>com.mysql</groupId>
+             <artifactId>mysql-connector-j</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>com.tngtech.archunit</groupId>
+             <artifactId>archunit-junit5-api</artifactId>
+             <version>${archunit-junit5.version}</version>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <!-- Adding the engine dependency to the surefire-plugin unfortunately does not work in the current version. -->
+             <!-- https://www.archunit.org/userguide/html/000_Index.html#_junit_5 -->
+             <groupId>com.tngtech.archunit</groupId>
+             <artifactId>archunit-junit5-engine</artifactId>
+             <version>${archunit-junit5.version}</version>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>com.zaxxer</groupId>
+             <artifactId>HikariCP</artifactId>
+         </dependency>
+         <dependency>
+             <groupId>io.micrometer</groupId>
+             <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
+@@ -278,50 +283,62 @@
+         <dependency>
+             <groupId>org.redisson</groupId>
+             <artifactId>redisson</artifactId>
+             <version>${redisson.version}</version>
+         </dependency>
+         <dependency>
+             <groupId>org.testcontainers</groupId>
+             <artifactId>jdbc</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>org.testcontainers</groupId>
+             <artifactId>junit-jupiter</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>org.testcontainers</groupId>
+             <artifactId>mysql</artifactId>
+             <scope>test</scope>
+         </dependency>
+         <dependency>
+             <groupId>org.testcontainers</groupId>
+             <artifactId>testcontainers</artifactId>
+             <scope>test</scope>
+         </dependency>
++        <dependency>
++            <groupId>org.apache.pdfbox</groupId>
++            <artifactId>pdfbox</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.poi</groupId>
++            <artifactId>poi-ooxml</artifactId>
++        </dependency>
++        <dependency>
++            <groupId>org.apache.poi</groupId>
++            <artifactId>poi-scratchpad</artifactId>
++        </dependency>
+     </dependencies>
+
+     <build>
+         <defaultGoal>spring-boot:run</defaultGoal>
+         <resources>
+             <resource>
+                 <directory>${basedir}/src/main/resources/</directory>
+                 <filtering>true</filtering>
+                 <includes>
+                     <include>config/**/*.yml</include>
+                 </includes>
+             </resource>
+             <resource>
+                 <directory>${basedir}/src/main/resources/</directory>
+                 <excludes>
+                     <exclude>config/**/*.yml</exclude>
+                 </excludes>
+             </resource>
+         </resources>
+         <plugins>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-checkstyle-plugin</artifactId>
+             </plugin>
+             <plugin>
+diff --git a/src/main/java/com/shanzha/config/CacheConfiguration.java b/src/main/java/com/shanzha/config/CacheConfiguration.java
+index f1c9112ee415b062a344d0f685347939473601a0..d53bbaa6fa7bdadb8c46b4f7a4c069f18a34d0ac 100644
+--- a/src/main/java/com/shanzha/config/CacheConfiguration.java
++++ b/src/main/java/com/shanzha/config/CacheConfiguration.java
+@@ -13,98 +13,109 @@ import org.redisson.config.SingleServerConfig;
+ import org.redisson.jcache.configuration.RedissonConfiguration;
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.boot.autoconfigure.cache.JCacheManagerCustomizer;
+ import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer;
+ import org.springframework.boot.info.BuildProperties;
+ import org.springframework.boot.info.GitProperties;
+ import org.springframework.cache.annotation.EnableCaching;
+ import org.springframework.cache.interceptor.KeyGenerator;
+ import org.springframework.context.annotation.*;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.Configuration;
+ import tech.jhipster.config.JHipsterProperties;
+ import tech.jhipster.config.cache.PrefixedKeyGenerator;
+
+ @Configuration
+ @EnableCaching
+ public class CacheConfiguration {
+
+     private GitProperties gitProperties;
+     private BuildProperties buildProperties;
+
+     @Bean
+     public javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration(JHipsterProperties jHipsterProperties) {
+         MutableConfiguration<Object, Object> jcacheConfig = new MutableConfiguration<>();
+
+-        URI redisUri = URI.create(jHipsterProperties.getCache().getRedis().getServer()[0]);
++        String[] servers = jHipsterProperties.getCache().getRedis().getServer();
++        for (int i = 0; i < servers.length; i++) {
++            if (!servers[i].startsWith("redis://") && !servers[i].startsWith("rediss://")) {
++                servers[i] = "redis://" + servers[i];
++            }
++        }
++
++        URI redisUri = URI.create(servers[0]);
+
+         Config config = new Config();
+         // Fix Hibernate lazy initialization https://github.com/jhipster/generator-jhipster/issues/22889
+         config.setCodec(new org.redisson.codec.SerializationCodec());
+         if (jHipsterProperties.getCache().getRedis().isCluster()) {
+             ClusterServersConfig clusterServersConfig = config
+                 .useClusterServers()
+                 .setMasterConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
+                 .setMasterConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
+                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
+-                .addNodeAddress(jHipsterProperties.getCache().getRedis().getServer());
++                .addNodeAddress(servers);
+
+             if (redisUri.getUserInfo() != null) {
+                 clusterServersConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
+             }
+         } else {
+             SingleServerConfig singleServerConfig = config
+                 .useSingleServer()
+                 .setConnectionPoolSize(jHipsterProperties.getCache().getRedis().getConnectionPoolSize())
+                 .setConnectionMinimumIdleSize(jHipsterProperties.getCache().getRedis().getConnectionMinimumIdleSize())
+                 .setSubscriptionConnectionPoolSize(jHipsterProperties.getCache().getRedis().getSubscriptionConnectionPoolSize())
+-                .setAddress(jHipsterProperties.getCache().getRedis().getServer()[0]);
++                .setAddress(servers[0]);
+
+             if (redisUri.getUserInfo() != null) {
+                 singleServerConfig.setPassword(redisUri.getUserInfo().substring(redisUri.getUserInfo().indexOf(':') + 1));
+             }
+         }
+         jcacheConfig.setStatisticsEnabled(true);
+         jcacheConfig.setExpiryPolicyFactory(
+             CreatedExpiryPolicy.factoryOf(new Duration(TimeUnit.SECONDS, jHipsterProperties.getCache().getRedis().getExpiration()))
+         );
+         return RedissonConfiguration.fromInstance(Redisson.create(config), jcacheConfig);
+     }
+
+     @Bean
+     public HibernatePropertiesCustomizer hibernatePropertiesCustomizer(javax.cache.CacheManager cm) {
+         return hibernateProperties -> hibernateProperties.put(ConfigSettings.CACHE_MANAGER, cm);
+     }
+
+     @Bean
+     public JCacheManagerCustomizer cacheManagerCustomizer(javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration) {
+         return cm -> {
+             createCache(cm, com.shanzha.repository.UserRepository.USERS_BY_LOGIN_CACHE, jcacheConfiguration);
+             createCache(cm, com.shanzha.repository.UserRepository.USERS_BY_EMAIL_CACHE, jcacheConfiguration);
+             createCache(cm, com.shanzha.domain.User.class.getName(), jcacheConfiguration);
+             createCache(cm, com.shanzha.domain.Authority.class.getName(), jcacheConfiguration);
+             createCache(cm, com.shanzha.domain.User.class.getName() + ".authorities", jcacheConfiguration);
++            createCache(cm, com.shanzha.domain.Novel.class.getName(), jcacheConfiguration);
++            createCache(cm, com.shanzha.domain.Chapter.class.getName(), jcacheConfiguration);
++            createCache(cm, com.shanzha.domain.ChapterContent.class.getName(), jcacheConfiguration);
++            createCache(cm, com.shanzha.domain.Coupon.class.getName(), jcacheConfiguration);
+             // jhipster-needle-redis-add-entry
+         };
+     }
+
+     private void createCache(
+         javax.cache.CacheManager cm,
+         String cacheName,
+         javax.cache.configuration.Configuration<Object, Object> jcacheConfiguration
+     ) {
+         javax.cache.Cache<Object, Object> cache = cm.getCache(cacheName);
+         if (cache != null) {
+             cache.clear();
+         } else {
+             cm.createCache(cacheName, jcacheConfiguration);
+         }
+     }
+
+     @Autowired(required = false)
+     public void setGitProperties(GitProperties gitProperties) {
+         this.gitProperties = gitProperties;
+     }
+
+     @Autowired(required = false)
+     public void setBuildProperties(BuildProperties buildProperties) {
+         this.buildProperties = buildProperties;
+diff --git a/src/main/java/com/shanzha/domain/Chapter.java b/src/main/java/com/shanzha/domain/Chapter.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1adafa4364b56da16210bdd245d121f09e0611f8
+--- /dev/null
++++ b/src/main/java/com/shanzha/domain/Chapter.java
+@@ -0,0 +1,45 @@
++package com.shanzha.domain;
++
++import jakarta.persistence.*;
++import java.io.Serializable;
++
++/**
++ * A Chapter.
++ */
++@Entity
++@Table(name = "chapter")
++public class Chapter implements Serializable {
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    private Long id;
++
++    private String title;
++
++    @ManyToOne
++    private Novel novel;
++
++    public Long getId() {
++        return id;
++    }
++
++    public void setId(Long id) {
++        this.id = id;
++    }
++
++    public String getTitle() {
++        return title;
++    }
++
++    public void setTitle(String title) {
++        this.title = title;
++    }
++
++    public Novel getNovel() {
++        return novel;
++    }
++
++    public void setNovel(Novel novel) {
++        this.novel = novel;
++    }
++}
+diff --git a/src/main/java/com/shanzha/domain/ChapterContent.java b/src/main/java/com/shanzha/domain/ChapterContent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ac00c9d398cc647d92afb18b82781cdd266438ab
+--- /dev/null
++++ b/src/main/java/com/shanzha/domain/ChapterContent.java
+@@ -0,0 +1,47 @@
++package com.shanzha.domain;
++
++import jakarta.persistence.*;
++import java.io.Serializable;
++
++/**
++ * A ChapterContent.
++ */
++@Entity
++@Table(name = "chapter_content")
++public class ChapterContent implements Serializable {
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    private Long id;
++
++    @ManyToOne
++    private Chapter chapter;
++
++    @Lob
++    @Column(columnDefinition = "TEXT")
++    private String content;
++
++    public Long getId() {
++        return id;
++    }
++
++    public void setId(Long id) {
++        this.id = id;
++    }
++
++    public Chapter getChapter() {
++        return chapter;
++    }
++
++    public void setChapter(Chapter chapter) {
++        this.chapter = chapter;
++    }
++
++    public String getContent() {
++        return content;
++    }
++
++    public void setContent(String content) {
++        this.content = content;
++    }
++}
+diff --git a/src/main/java/com/shanzha/domain/Coupon.java b/src/main/java/com/shanzha/domain/Coupon.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8edfc29ef1cdb3502a60f65197f1a1ce1d811748
+--- /dev/null
++++ b/src/main/java/com/shanzha/domain/Coupon.java
+@@ -0,0 +1,56 @@
++package com.shanzha.domain;
++
++import jakarta.persistence.*;
++import java.io.Serializable;
++import java.time.Instant;
++
++/**
++ * A Coupon issued to users daily.
++ */
++@Entity
++@Table(name = "coupon")
++public class Coupon implements Serializable {
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    private Long id;
++
++    private String code;
++
++    private Instant issuedAt;
++
++    @ManyToOne
++    private User user;
++
++    public Long getId() {
++        return id;
++    }
++
++    public void setId(Long id) {
++        this.id = id;
++    }
++
++    public String getCode() {
++        return code;
++    }
++
++    public void setCode(String code) {
++        this.code = code;
++    }
++
++    public Instant getIssuedAt() {
++        return issuedAt;
++    }
++
++    public void setIssuedAt(Instant issuedAt) {
++        this.issuedAt = issuedAt;
++    }
++
++    public User getUser() {
++        return user;
++    }
++
++    public void setUser(User user) {
++        this.user = user;
++    }
++}
+diff --git a/src/main/java/com/shanzha/domain/Novel.java b/src/main/java/com/shanzha/domain/Novel.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95df499a8aaa702068e4a198d4849bb5ee06b9a1
+--- /dev/null
++++ b/src/main/java/com/shanzha/domain/Novel.java
+@@ -0,0 +1,34 @@
++package com.shanzha.domain;
++
++import jakarta.persistence.*;
++import java.io.Serializable;
++
++/**
++ * A Novel.
++ */
++@Entity
++@Table(name = "novel")
++public class Novel implements Serializable {
++
++    @Id
++    @GeneratedValue(strategy = GenerationType.IDENTITY)
++    private Long id;
++
++    private String title;
++
++    public Long getId() {
++        return id;
++    }
++
++    public void setId(Long id) {
++        this.id = id;
++    }
++
++    public String getTitle() {
++        return title;
++    }
++
++    public void setTitle(String title) {
++        this.title = title;
++    }
++}
+diff --git a/src/main/java/com/shanzha/repository/ChapterContentRepository.java b/src/main/java/com/shanzha/repository/ChapterContentRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8926c3e828e03017ec777dd140ab5b12baff333c
+--- /dev/null
++++ b/src/main/java/com/shanzha/repository/ChapterContentRepository.java
+@@ -0,0 +1,11 @@
++package com.shanzha.repository;
++
++import com.shanzha.domain.ChapterContent;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++/**
++ * Spring Data JPA repository for the ChapterContent entity.
++ */
++@Repository
++public interface ChapterContentRepository extends JpaRepository<ChapterContent, Long> {}
+diff --git a/src/main/java/com/shanzha/repository/ChapterRepository.java b/src/main/java/com/shanzha/repository/ChapterRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..109849ce767148a6d2ba4b450ee60d52492889f9
+--- /dev/null
++++ b/src/main/java/com/shanzha/repository/ChapterRepository.java
+@@ -0,0 +1,8 @@
++package com.shanzha.repository;
++
++import com.shanzha.domain.Chapter;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++@Repository
++public interface ChapterRepository extends JpaRepository<Chapter, Long> {}
+diff --git a/src/main/java/com/shanzha/repository/CouponRepository.java b/src/main/java/com/shanzha/repository/CouponRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..00616c8cc127e80da87a7da119ea8c397d9e23f6
+--- /dev/null
++++ b/src/main/java/com/shanzha/repository/CouponRepository.java
+@@ -0,0 +1,8 @@
++package com.shanzha.repository;
++
++import com.shanzha.domain.Coupon;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++@Repository
++public interface CouponRepository extends JpaRepository<Coupon, Long> {}
+diff --git a/src/main/java/com/shanzha/repository/NovelRepository.java b/src/main/java/com/shanzha/repository/NovelRepository.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b46d910a1e2a3529ef04c343bfe25b5e380a133d
+--- /dev/null
++++ b/src/main/java/com/shanzha/repository/NovelRepository.java
+@@ -0,0 +1,8 @@
++package com.shanzha.repository;
++
++import com.shanzha.domain.Novel;
++import org.springframework.data.jpa.repository.JpaRepository;
++import org.springframework.stereotype.Repository;
++
++@Repository
++public interface NovelRepository extends JpaRepository<Novel, Long> {}
+diff --git a/src/main/java/com/shanzha/service/ChapterContentService.java b/src/main/java/com/shanzha/service/ChapterContentService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4b926e1cd71bd42cf402d0ac407eaa5f2ba83cee
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/ChapterContentService.java
+@@ -0,0 +1,63 @@
++package com.shanzha.service;
++
++import com.shanzha.domain.Chapter;
++import com.shanzha.domain.ChapterContent;
++import com.shanzha.repository.ChapterContentRepository;
++import jakarta.annotation.PostConstruct;
++import java.util.Objects;
++import org.redisson.api.RBloomFilter;
++import org.redisson.api.RedissonClient;
++import org.springframework.cache.annotation.CacheEvict;
++import org.springframework.cache.annotation.Cacheable;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++
++/**
++ * Service for managing ChapterContent with a Bloom filter to track seen chapters.
++ */
++@Service
++@Transactional
++public class ChapterContentService {
++
++    private final ChapterContentRepository chapterContentRepository;
++    private final RBloomFilter<Long> bloomFilter;
++
++    public ChapterContentService(ChapterContentRepository chapterContentRepository, RedissonClient redissonClient) {
++        this.chapterContentRepository = chapterContentRepository;
++        this.bloomFilter = redissonClient.getBloomFilter("chapterContent");
++    }
++
++    @PostConstruct
++    public void initBloomFilter() {
++        chapterContentRepository
++            .findAll()
++            .stream()
++            .map(ChapterContent::getChapter)
++            .filter(Objects::nonNull)
++            .map(Chapter::getId)
++            .filter(Objects::nonNull)
++            .forEach(bloomFilter::add);
++    }
++
++    @Cacheable(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#id")
++    public ChapterContent findOne(Long id) {
++        return chapterContentRepository.findById(id).orElse(null);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#result.id", condition = "#result != null")
++    public ChapterContent save(ChapterContent chapterContent) {
++        if (chapterContent.getChapter() != null && chapterContent.getChapter().getId() != null) {
++            bloomFilter.add(chapterContent.getChapter().getId());
++        }
++        return chapterContentRepository.save(chapterContent);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.ChapterContent.class.getName(), key = "#id")
++    public void delete(Long id) {
++        chapterContentRepository.deleteById(id);
++    }
++
++    public java.util.List<ChapterContent> findAll() {
++        return chapterContentRepository.findAll();
++    }
++}
+diff --git a/src/main/java/com/shanzha/service/ChapterService.java b/src/main/java/com/shanzha/service/ChapterService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..96540efdba6311a42603ea4fdb21064e8dfb5a65
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/ChapterService.java
+@@ -0,0 +1,38 @@
++package com.shanzha.service;
++
++import com.shanzha.domain.Chapter;
++import com.shanzha.repository.ChapterRepository;
++import org.springframework.cache.annotation.CacheEvict;
++import org.springframework.cache.annotation.Cacheable;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++
++@Service
++@Transactional
++public class ChapterService {
++
++    private final ChapterRepository chapterRepository;
++
++    public ChapterService(ChapterRepository chapterRepository) {
++        this.chapterRepository = chapterRepository;
++    }
++
++    @Cacheable(value = com.shanzha.domain.Chapter.class.getName(), key = "#id")
++    public Chapter findOne(Long id) {
++        return chapterRepository.findById(id).orElse(null);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.Chapter.class.getName(), key = "#result.id", condition = "#result != null")
++    public Chapter save(Chapter chapter) {
++        return chapterRepository.save(chapter);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.Chapter.class.getName(), key = "#id")
++    public void delete(Long id) {
++        chapterRepository.deleteById(id);
++    }
++
++    public java.util.List<Chapter> findAll() {
++        return chapterRepository.findAll();
++    }
++}
+diff --git a/src/main/java/com/shanzha/service/CommentService.java b/src/main/java/com/shanzha/service/CommentService.java
+index 6929802e852c2a66dc34996cdc2af73836a6096c..7dc6faf3a9dbc2e3c1ae2e2fdb700e9766d251fe 100644
+--- a/src/main/java/com/shanzha/service/CommentService.java
++++ b/src/main/java/com/shanzha/service/CommentService.java
+@@ -19,51 +19,50 @@ import org.springframework.data.domain.Page;
+ import org.springframework.data.domain.Pageable;
+ import org.springframework.stereotype.Service;
+ import org.springframework.transaction.annotation.Transactional;
+
+ /**
+  * Service Implementation for managing {@link com.shanzha.domain.Comment}.
+  */
+ @Service
+ @Transactional
+ public class CommentService {
+
+     private static final Logger LOG = LoggerFactory.getLogger(CommentService.class);
+
+     private final CommentRepository commentRepository;
+
+     private final CommentMapper commentMapper;
+
+     private final UserFootService userFootService;
+
+     private final UserRepository userRepository;
+
+     public CommentService(
+         CommentRepository commentRepository,
+         CommentMapper commentMapper,
+         UserFootService userFootService,
+-        UserService userService,
+         UserRepository userRepository
+     ) {
+         this.commentRepository = commentRepository;
+         this.commentMapper = commentMapper;
+         this.userFootService = userFootService;
+         this.userRepository = userRepository;
+     }
+
+     /**
+      * Save a comment.
+      *
+      * @param commentDTO the entity to save.
+      * @return the persisted entity.
+      */
+     public CommentDTO save(CommentDTO commentDTO) {
+         LOG.debug("Request to save Comment : {}", commentDTO);
+         Comment comment = commentMapper.toEntity(commentDTO);
+         comment = commentRepository.save(comment);
+         return commentMapper.toDto(comment);
+     }
+
+     /**
+      * Update a comment.
+      *
+      * @param commentDTO the entity to save.
+@@ -195,51 +194,51 @@ public class CommentService {
+      *
+      * @param comment
+      */
+     private void fillCommentInfo(BaseCommentDTO comment) {
+         User userInfoDO = userRepository.findById(comment.getUserId()).orElse(null);
+         if (userInfoDO == null) {
+             // 如果用户注销，给一个默认的用户
+             comment.setUserName("默认用户");
+             comment.setUserPhoto("");
+             if (comment instanceof TopCommentDTO) {
+                 ((TopCommentDTO) comment).setCommentCount(0);
+             }
+         } else {
+             comment.setUserName(userInfoDO.getLogin());
+             comment.setUserPhoto(userInfoDO.getImageUrl());
+             if (comment instanceof TopCommentDTO) {
+                 ((TopCommentDTO) comment).setCommentCount(((TopCommentDTO) comment).getChildComments().size());
+             }
+         }
+
+         // 查询点赞数
+         Long praiseCount = userFootService.queryCommentPraiseCount(comment.getCommentId());
+         comment.setPraiseCount(praiseCount.intValue());
+
+         // 查询当前登录用于是否点赞过
+-        Long loginUserId = SecurityUtils.getCurrentUserId().get();
++        Long loginUserId = SecurityUtils.getCurrentUserId().orElse(null);
+         if (loginUserId != null) {
+             // 判断当前用户是否点过赞
+             UserFootDTO foot = userFootService.queryUserFoot(comment.getCommentId(), DocumentTypeEnum.COMMENT.getCode(), loginUserId);
+             comment.setPraised(foot != null && Objects.equals(foot.getPraiseStat(), PraiseStatEnum.PRAISE.getCode()));
+         } else {
+             comment.setPraised(false);
+         }
+     }
+
+     /**
+      * 查询回帖最多的评论
+      *
+      * @param articleId
+      * @return
+      */
+
+     public TopCommentDTO queryHotComment(Long articleId) {
+         Comment comment = commentRepository.findHotTopComment(articleId);
+         if (comment == null) {
+             return null;
+         }
+
+         TopCommentDTO result = CommentMapper.toTopDto(comment);
+         // 查询子评论
+         List<Comment> subComments = commentRepository.findByArticleIdAndTopCommentIdInAndDeleted(
+diff --git a/src/main/java/com/shanzha/service/CouponScheduler.java b/src/main/java/com/shanzha/service/CouponScheduler.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4286d25f32919394a10bca5a7f5abb5ba60db71
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/CouponScheduler.java
+@@ -0,0 +1,22 @@
++package com.shanzha.service;
++
++import com.shanzha.repository.UserRepository;
++import org.springframework.scheduling.annotation.Scheduled;
++import org.springframework.stereotype.Component;
++
++@Component
++public class CouponScheduler {
++
++    private final UserRepository userRepository;
++    private final CouponService couponService;
++
++    public CouponScheduler(UserRepository userRepository, CouponService couponService) {
++        this.userRepository = userRepository;
++        this.couponService = couponService;
++    }
++
++    @Scheduled(cron = "0 0 0 * * ?")
++    public void distributeDailyCoupons() {
++        userRepository.findAll().forEach(couponService::issueTo);
++    }
++}
+diff --git a/src/main/java/com/shanzha/service/CouponService.java b/src/main/java/com/shanzha/service/CouponService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..79745b7d761a19d061f4b7dc80a58c734ef318e9
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/CouponService.java
+@@ -0,0 +1,38 @@
++package com.shanzha.service;
++
++import com.shanzha.domain.Coupon;
++import com.shanzha.domain.User;
++import com.shanzha.repository.CouponRepository;
++import java.time.Instant;
++import java.util.UUID;
++import org.springframework.cache.annotation.CacheEvict;
++import org.springframework.cache.annotation.Cacheable;
++import org.springframework.stereotype.Service;
++
++@Service
++public class CouponService {
++
++    private final CouponRepository couponRepository;
++
++    public CouponService(CouponRepository couponRepository) {
++        this.couponRepository = couponRepository;
++    }
++
++    @Cacheable(value = com.shanzha.domain.Coupon.class.getName(), key = "#id")
++    public Coupon findOne(Long id) {
++        return couponRepository.findById(id).orElse(null);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.Coupon.class.getName(), key = "#coupon.id")
++    public Coupon save(Coupon coupon) {
++        return couponRepository.save(coupon);
++    }
++
++    public Coupon issueTo(User user) {
++        Coupon coupon = new Coupon();
++        coupon.setCode(UUID.randomUUID().toString());
++        coupon.setIssuedAt(Instant.now());
++        coupon.setUser(user);
++        return save(coupon);
++    }
++}
+diff --git a/src/main/java/com/shanzha/service/NovelService.java b/src/main/java/com/shanzha/service/NovelService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..fbce8ec6a17d9917b485db9a8016431d8947b312
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/NovelService.java
+@@ -0,0 +1,71 @@
++package com.shanzha.service;
++
++import com.shanzha.domain.Novel;
++import com.shanzha.repository.NovelRepository;
++import java.io.IOException;
++import java.util.stream.Collectors;
++import org.apache.pdfbox.pdmodel.PDDocument;
++import org.apache.pdfbox.text.PDFTextStripper;
++import org.apache.poi.hwpf.HWPFDocument;
++import org.apache.poi.hwpf.extractor.WordExtractor;
++import org.apache.poi.xwpf.usermodel.XWPFDocument;
++import org.apache.poi.xwpf.usermodel.XWPFParagraph;
++import org.springframework.cache.annotation.CacheEvict;
++import org.springframework.cache.annotation.Cacheable;
++import org.springframework.stereotype.Service;
++import org.springframework.transaction.annotation.Transactional;
++import org.springframework.web.multipart.MultipartFile;
++
++@Service
++@Transactional
++public class NovelService {
++
++    private final NovelRepository novelRepository;
++
++    public NovelService(NovelRepository novelRepository) {
++        this.novelRepository = novelRepository;
++    }
++
++    public String parseFile(MultipartFile file) throws IOException {
++        String filename = file.getOriginalFilename();
++        if (filename == null) {
++            throw new IllegalArgumentException("File name is missing");
++        }
++        String lower = filename.toLowerCase();
++        if (lower.endsWith(".pdf")) {
++            try (PDDocument document = PDDocument.load(file.getInputStream())) {
++                PDFTextStripper stripper = new PDFTextStripper();
++                return stripper.getText(document);
++            }
++        } else if (lower.endsWith(".docx")) {
++            try (XWPFDocument document = new XWPFDocument(file.getInputStream())) {
++                return document.getParagraphs().stream().map(XWPFParagraph::getText).collect(Collectors.joining("\n"));
++            }
++        } else if (lower.endsWith(".doc")) {
++            try (HWPFDocument document = new HWPFDocument(file.getInputStream()); WordExtractor extractor = new WordExtractor(document)) {
++                return extractor.getText();
++            }
++        } else {
++            throw new IllegalArgumentException("Unsupported file type");
++        }
++    }
++
++    @Cacheable(value = com.shanzha.domain.Novel.class.getName(), key = "#id")
++    public Novel findOne(Long id) {
++        return novelRepository.findById(id).orElse(null);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.Novel.class.getName(), key = "#result.id", condition = "#result != null")
++    public Novel save(Novel novel) {
++        return novelRepository.save(novel);
++    }
++
++    @CacheEvict(value = com.shanzha.domain.Novel.class.getName(), key = "#id")
++    public void delete(Long id) {
++        novelRepository.deleteById(id);
++    }
++
++    public java.util.List<Novel> findAll() {
++        return novelRepository.findAll();
++    }
++}
+diff --git a/src/main/java/com/shanzha/service/RateLimitService.java b/src/main/java/com/shanzha/service/RateLimitService.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..03f5c36003f1367ed769b54494b5d8c8b216d4ec
+--- /dev/null
++++ b/src/main/java/com/shanzha/service/RateLimitService.java
+@@ -0,0 +1,22 @@
++package com.shanzha.service;
++
++import io.github.bucket4j.Bandwidth;
++import io.github.bucket4j.Bucket;
++import io.github.bucket4j.Refill;
++import java.time.Duration;
++import org.springframework.stereotype.Service;
++
++@Service
++public class RateLimitService {
++
++    private final Bucket bucket;
++
++    public RateLimitService() {
++        Bandwidth limit = Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1)));
++        this.bucket = Bucket.builder().addLimit(limit).build();
++    }
++
++    public boolean tryConsume() {
++        return bucket.tryConsume(1);
++    }
++}
+diff --git a/src/main/java/com/shanzha/web/rest/ChapterContentResource.java b/src/main/java/com/shanzha/web/rest/ChapterContentResource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1bcb18a404d5b084d97a02132fb2cf224e982dfd
+--- /dev/null
++++ b/src/main/java/com/shanzha/web/rest/ChapterContentResource.java
+@@ -0,0 +1,55 @@
++package com.shanzha.web.rest;
++
++import com.shanzha.domain.ChapterContent;
++import com.shanzha.service.ChapterContentService;
++import com.shanzha.service.RateLimitService;
++import java.util.List;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++
++@RestController
++@RequestMapping("/api/chapter-contents")
++public class ChapterContentResource {
++
++    private final ChapterContentService chapterContentService;
++    private final RateLimitService rateLimitService;
++
++    public ChapterContentResource(ChapterContentService chapterContentService, RateLimitService rateLimitService) {
++        this.chapterContentService = chapterContentService;
++        this.rateLimitService = rateLimitService;
++    }
++
++    @GetMapping("/{id}")
++    public ResponseEntity<ChapterContent> get(@PathVariable Long id) {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(chapterContentService.findOne(id));
++    }
++
++    @GetMapping
++    public ResponseEntity<List<ChapterContent>> all() {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(chapterContentService.findAll());
++    }
++
++    @PostMapping
++    public ResponseEntity<ChapterContent> create(@RequestBody ChapterContent cc) {
++        return new ResponseEntity<>(chapterContentService.save(cc), HttpStatus.CREATED);
++    }
++
++    @PutMapping("/{id}")
++    public ResponseEntity<ChapterContent> update(@PathVariable Long id, @RequestBody ChapterContent cc) {
++        cc.setId(id);
++        return ResponseEntity.ok(chapterContentService.save(cc));
++    }
++
++    @DeleteMapping("/{id}")
++    public ResponseEntity<Void> delete(@PathVariable Long id) {
++        chapterContentService.delete(id);
++        return ResponseEntity.noContent().build();
++    }
++}
+diff --git a/src/main/java/com/shanzha/web/rest/ChapterResource.java b/src/main/java/com/shanzha/web/rest/ChapterResource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..65d304887d57c82c7e086566941ebffc04888f9e
+--- /dev/null
++++ b/src/main/java/com/shanzha/web/rest/ChapterResource.java
+@@ -0,0 +1,55 @@
++package com.shanzha.web.rest;
++
++import com.shanzha.domain.Chapter;
++import com.shanzha.service.ChapterService;
++import com.shanzha.service.RateLimitService;
++import java.util.List;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++
++@RestController
++@RequestMapping("/api/chapters")
++public class ChapterResource {
++
++    private final ChapterService chapterService;
++    private final RateLimitService rateLimitService;
++
++    public ChapterResource(ChapterService chapterService, RateLimitService rateLimitService) {
++        this.chapterService = chapterService;
++        this.rateLimitService = rateLimitService;
++    }
++
++    @GetMapping("/{id}")
++    public ResponseEntity<Chapter> get(@PathVariable Long id) {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(chapterService.findOne(id));
++    }
++
++    @GetMapping
++    public ResponseEntity<List<Chapter>> all() {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(chapterService.findAll());
++    }
++
++    @PostMapping
++    public ResponseEntity<Chapter> create(@RequestBody Chapter chapter) {
++        return new ResponseEntity<>(chapterService.save(chapter), HttpStatus.CREATED);
++    }
++
++    @PutMapping("/{id}")
++    public ResponseEntity<Chapter> update(@PathVariable Long id, @RequestBody Chapter chapter) {
++        chapter.setId(id);
++        return ResponseEntity.ok(chapterService.save(chapter));
++    }
++
++    @DeleteMapping("/{id}")
++    public ResponseEntity<Void> delete(@PathVariable Long id) {
++        chapterService.delete(id);
++        return ResponseEntity.noContent().build();
++    }
++}
+diff --git a/src/main/java/com/shanzha/web/rest/NovelResource.java b/src/main/java/com/shanzha/web/rest/NovelResource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..112443a4943658e4767b8cf22e1da515842ac97c
+--- /dev/null
++++ b/src/main/java/com/shanzha/web/rest/NovelResource.java
+@@ -0,0 +1,63 @@
++package com.shanzha.web.rest;
++
++import com.shanzha.domain.Novel;
++import com.shanzha.service.NovelService;
++import com.shanzha.service.RateLimitService;
++import java.io.IOException;
++import java.util.List;
++import org.springframework.http.HttpStatus;
++import org.springframework.http.ResponseEntity;
++import org.springframework.web.bind.annotation.*;
++import org.springframework.web.multipart.MultipartFile;
++
++@RestController
++@RequestMapping("/api/novels")
++public class NovelResource {
++
++    private final NovelService novelService;
++    private final RateLimitService rateLimitService;
++
++    public NovelResource(NovelService novelService, RateLimitService rateLimitService) {
++        this.novelService = novelService;
++        this.rateLimitService = rateLimitService;
++    }
++
++    @PostMapping("/parse")
++    public ResponseEntity<String> parse(@RequestParam("file") MultipartFile file) throws IOException {
++        String content = novelService.parseFile(file);
++        return ResponseEntity.ok(content);
++    }
++
++    @GetMapping("/{id}")
++    public ResponseEntity<Novel> get(@PathVariable Long id) {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(novelService.findOne(id));
++    }
++
++    @GetMapping
++    public ResponseEntity<List<Novel>> all() {
++        if (!rateLimitService.tryConsume()) {
++            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
++        }
++        return ResponseEntity.ok(novelService.findAll());
++    }
++
++    @PostMapping
++    public ResponseEntity<Novel> create(@RequestBody Novel novel) {
++        return new ResponseEntity<>(novelService.save(novel), HttpStatus.CREATED);
++    }
++
++    @PutMapping("/{id}")
++    public ResponseEntity<Novel> update(@PathVariable Long id, @RequestBody Novel novel) {
++        novel.setId(id);
++        return ResponseEntity.ok(novelService.save(novel));
++    }
++
++    @DeleteMapping("/{id}")
++    public ResponseEntity<Void> delete(@PathVariable Long id) {
++        novelService.delete(id);
++        return ResponseEntity.noContent().build();
++    }
++}
+diff --git a/src/main/webapp/app/novel/chapter-content.service.ts b/src/main/webapp/app/novel/chapter-content.service.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..64f30c93e56e9514fe3624edb6b7379b6f273012
+--- /dev/null
++++ b/src/main/webapp/app/novel/chapter-content.service.ts
+@@ -0,0 +1,25 @@
++import axios from 'axios';
++
++const baseApiUrl = 'api/chapter-contents';
++
++export default class ChapterContentService {
++  find(id: number): Promise<any> {
++    return axios.get(`${baseApiUrl}/${id}`).then(res => res.data);
++  }
++
++  retrieve(): Promise<any[]> {
++    return axios.get(baseApiUrl).then(res => res.data);
++  }
++
++  create(entity: any): Promise<any> {
++    return axios.post(baseApiUrl, entity).then(res => res.data);
++  }
++
++  update(entity: any): Promise<any> {
++    return axios.put(`${baseApiUrl}/${entity.id}`, entity).then(res => res.data);
++  }
++
++  delete(id: number): Promise<void> {
++    return axios.delete(`${baseApiUrl}/${id}`);
++  }
++}
+diff --git a/src/main/webapp/app/novel/chapter.service.ts b/src/main/webapp/app/novel/chapter.service.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..30ff2c533c76dfbbc79e50e7bf76a1d1fee2b84b
+--- /dev/null
++++ b/src/main/webapp/app/novel/chapter.service.ts
+@@ -0,0 +1,25 @@
++import axios from 'axios';
++
++const baseApiUrl = 'api/chapters';
++
++export default class ChapterService {
++  find(id: number): Promise<any> {
++    return axios.get(`${baseApiUrl}/${id}`).then(res => res.data);
++  }
++
++  retrieve(): Promise<any[]> {
++    return axios.get(baseApiUrl).then(res => res.data);
++  }
++
++  create(entity: any): Promise<any> {
++    return axios.post(baseApiUrl, entity).then(res => res.data);
++  }
++
++  update(entity: any): Promise<any> {
++    return axios.put(`${baseApiUrl}/${entity.id}`, entity).then(res => res.data);
++  }
++
++  delete(id: number): Promise<void> {
++    return axios.delete(`${baseApiUrl}/${id}`);
++  }
++}
+diff --git a/src/main/webapp/app/novel/novel-upload.vue b/src/main/webapp/app/novel/novel-upload.vue
+new file mode 100644
+index 0000000000000000000000000000000000000000..fe59ac63dc74c318533f75927214d402e5effab9
+--- /dev/null
++++ b/src/main/webapp/app/novel/novel-upload.vue
+@@ -0,0 +1,32 @@
++<template>
++  <div>
++    <h2>小说上传解析</h2>
++    <input type="file" @change="onFileChange" />
++    <button @click="upload" :disabled="!file">上传并解析</button>
++    <pre v-if="content">{{ content }}</pre>
++  </div>
++</template>
++
++<script setup lang="ts">
++import { ref } from 'vue';
++import NovelService from './novel.service';
++
++const novelService = new NovelService();
++const file = ref<File | null>(null);
++const content = ref('');
++
++const onFileChange = (e: Event) => {
++  const target = e.target as HTMLInputElement;
++  if (target.files && target.files.length > 0) {
++    file.value = target.files[0];
++  } else {
++    file.value = null;
++  }
++};
++
++const upload = async () => {
++  if (file.value) {
++    content.value = await novelService.parse(file.value);
++  }
++};
++</script>
+diff --git a/src/main/webapp/app/novel/novel.service.ts b/src/main/webapp/app/novel/novel.service.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..82dec7b834cbc0f3f20c0446d2b5489a14742c10
+--- /dev/null
++++ b/src/main/webapp/app/novel/novel.service.ts
+@@ -0,0 +1,36 @@
++import axios from 'axios';
++
++const baseApiUrl = 'api/novels';
++
++export default class NovelService {
++  parse(file: File): Promise<string> {
++    const formData = new FormData();
++    formData.append('file', file);
++    return new Promise((resolve, reject) => {
++      axios
++        .post(`${baseApiUrl}/parse`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
++        .then(res => resolve(res.data))
++        .catch(err => reject(err));
++    });
++  }
++
++  find(id: number): Promise<any> {
++    return axios.get(`${baseApiUrl}/${id}`).then(res => res.data);
++  }
++
++  retrieve(): Promise<any[]> {
++    return axios.get(baseApiUrl).then(res => res.data);
++  }
++
++  create(entity: any): Promise<any> {
++    return axios.post(baseApiUrl, entity).then(res => res.data);
++  }
++
++  update(entity: any): Promise<any> {
++    return axios.put(`${baseApiUrl}/${entity.id}`, entity).then(res => res.data);
++  }
++
++  delete(id: number): Promise<void> {
++    return axios.delete(`${baseApiUrl}/${id}`);
++  }
++}
+diff --git a/src/main/webapp/app/router/pages.ts b/src/main/webapp/app/router/pages.ts
+index 80c2e55fbb0589801e88c68063475c80078b790d..b240e85f52a152e4a2a942acaaffe64bd8254873 100644
+--- a/src/main/webapp/app/router/pages.ts
++++ b/src/main/webapp/app/router/pages.ts
+@@ -1,5 +1,11 @@
++const NovelUpload = () => import('@/novel/novel-upload.vue');
+ // jhipster-needle-add-entity-to-router-import - JHipster will import entities to the router here
+
+ export default [
++  {
++    path: '/novel',
++    name: 'NovelUpload',
++    component: NovelUpload,
++  },
+   // jhipster-needle-add-entity-to-router - JHipster will add entities to the router here
+ ];
