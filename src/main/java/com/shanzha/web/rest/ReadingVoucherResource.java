@@ -41,6 +41,16 @@ public class ReadingVoucherResource {
         return voucher.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/available")
+    public List<ReadingVoucher> getAvailable() {
+        return readingVoucherService.findAvailable();
+    }
+
+    @GetMapping("/my")
+    public List<ReadingVoucher> getMine(Principal principal) {
+        return readingVoucherService.findByUser(principal.getName());
+    }
+
     @GetMapping
     public List<ReadingVoucher> getAll() {
         return readingVoucherService.findAll();
