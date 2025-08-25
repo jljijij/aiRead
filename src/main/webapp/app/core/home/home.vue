@@ -4,7 +4,7 @@
       <span class="hipster img-fluid rounded"></span>
     </div>
     <div class="col-md-9">
-      <h1 class="display-4">欢迎, Java Hipster!</h1>
+      <h1 class="display-4">欢迎来到 aiRead!</h1>
       <p class="lead">这里是首页</p>
 
       <div>
@@ -23,32 +23,14 @@
         </div>
       </div>
 
-      <p>如果您有任何有关 JHipster 的问题, 可以查阅下列资源:</p>
+      <p>欢迎使用 aiRead，您可以在这里快速访问常用功能:</p>
 
       <ul>
-        <li><a href="https://www.jhipster.tech/" target="_blank" rel="noopener noreferrer">JHipster 首頁</a></li>
-        <li>
-          <a href="https://stackoverflow.com/tags/jhipster/info" target="_blank" rel="noopener noreferrer"
-            >Stack Overflow 上关于 JHipster 的讨论</a
-          >
-        </li>
-        <li>
-          <a href="https://github.com/jhipster/generator-jhipster/issues?state=open" target="_blank" rel="noopener noreferrer"
-            >JHipster 的缺陷追踪</a
-          >
-        </li>
-        <li>
-          <a href="https://gitter.im/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer">JHipster public chat room</a>
-        </li>
-        <li>
-          <a href="https://twitter.com/jhipster" target="_blank" rel="noopener noreferrer">在 Twitter 上联络 @jhipster</a>
-        </li>
+        <li><router-link to="/novel">文件上传</router-link></li>
+        <li><router-link to="/chapter-content">文章阅读</router-link></li>
+        <li><router-link to="/reading-voucher">优惠券查看</router-link></li>
+        <li><router-link to="/voucher">抢优惠券</router-link></li>
       </ul>
-
-      <p>
-        <span>如果您喜欢 JHipster, 请记得给我们加星在</span>
-        <a href="https://github.com/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer">GitHub</a>!
-      </p>
     </div>
   </div>
 </template>
