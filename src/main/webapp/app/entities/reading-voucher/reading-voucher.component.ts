@@ -1,4 +1,4 @@
-import { defineComponent, inject, ref } from 'vue';
+import { defineComponent, inject, onMounted, ref } from 'vue';
 import type ReadingVoucherService from './reading-voucher.service';
 
 export default defineComponent({
@@ -8,6 +8,21 @@ export default defineComponent({
     const readingVoucherService = inject('readingVoucherService') as () => ReadingVoucherService;
     const file = ref<File | null>(null);
     const claimedCode = ref('');
+    const available = ref<any[]>([]);
+    const mine = ref<any[]>([]);
+
+    const load = () => {
+      readingVoucherService()
+        .available()
+        .then(res => {
+          available.value = res.data;
+        });
+      readingVoucherService()
+        .mine()
+        .then(res => {
+          mine.value = res.data;
+        });
+    };
 
     const upload = () => {
       if (file.value) {
@@ -24,9 +39,14 @@ export default defineComponent({
         .claim()
         .then(res => {
           claimedCode.value = res.data.code;
+          load();
         });
     };
 
-    return { file, upload, claimVoucher, claimedCode };
+    onMounted(() => {
+      load();
+    });
+
+    return { file, upload, claimVoucher, claimedCode, available, mine };
   },
 });

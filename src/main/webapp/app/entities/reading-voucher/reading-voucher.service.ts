@@ -16,4 +16,12 @@ export default class ReadingVoucherService {
   public retrieve(): Promise<any> {
     return axios.get('api/reading-vouchers');
   }
+
+  public available(): Promise<any> {
+    return axios.get('api/reading-vouchers/available');
+  }
+
+  public mine(): Promise<any> {
+    return axios.get('api/reading-vouchers/my');
+  }
 }
