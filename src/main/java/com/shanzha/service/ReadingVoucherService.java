@@ -100,4 +100,14 @@ public class ReadingVoucherService {
     public List<ReadingVoucher> findAll() {
         return readingVoucherRepository.findAll();
     }
+
+    @Transactional(readOnly = true)
+    public List<ReadingVoucher> findAvailable() {
+        return readingVoucherRepository.findByClaimedByIsNull();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReadingVoucher> findByUser(String userLogin) {
+        return readingVoucherRepository.findByClaimedBy(userLogin);
+    }
 }
