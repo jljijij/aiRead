@@ -1,25 +1,10 @@
 package com.shanzha.service;
 
-
 import com.shanzha.domain.ChapterUpdate;
 import com.shanzha.domain.CommonCodeMsg;
 import com.shanzha.service.dto.ChapterContentDTO;
 import com.shanzha.utils.IdGenerator;
 import com.shanzha.web.rest.errors.BusinessException;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.redisson.api.RBloomFilter;
-import org.redisson.api.RedissonClient;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.core.MessageSendingOperations;
-import org.springframework.messaging.support.MessageBuilder;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import jakarta.annotation.Resource;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,8 +17,16 @@ import java.nio.file.StandardOpenOption;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.shanzha.service.ChapterContentService.BLOOM_FILTER_NAME;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.core.MessageSendingOperations;
+import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -45,7 +38,6 @@ public class ChunkUploadService {
     @Value("${upload.target-dir:/tmp/merged}")
     private String targetDir;
 
-
     // 记录每个 fileHash 的最后上传时间
     private final ConcurrentHashMap<String, Long> chunkUploadTracker = new ConcurrentHashMap<>();
 
@@ -54,26 +46,11 @@ public class ChunkUploadService {
 
     @Resource
     private ChapterContentService chapterContentService;
-    @Autowired
-    RedissonClient redissonClient;
+
     @Resource
     private MessageSendingOperations<String> rocketMQTemplate;
-    private String buildChapterKey(Long novelId, Long chapterId, Long pageId) {
-        return novelId + "::" + chapterId + "::" + pageId;
-    }
-    private void addToBloomFilter(Long novelId, Long chapterId, Long pageId) {
-        String key = buildChapterKey(novelId, chapterId, pageId);
-        RBloomFilter<String> bloomFilter = redissonClient.getBloomFilter(BLOOM_FILTER_NAME);
 
-        // 初始化布隆过滤器（一次性）
-        if (!bloomFilter.isExists()) {
-            bloomFilter.tryInit(10_000_000, 0.001); // 预期1000万条数据，误判率0.1%
-        }
-
-        bloomFilter.add(key);
-    }
-    public Boolean handleChunkUpload(MultipartFile file, Long novelId, Long chapterId,
-                                     Integer chunkNum, int totalChunks, String fileHash) {
+    public Boolean handleChunkUpload(MultipartFile file, Long novelId, Long chapterId, Integer chunkNum, int totalChunks, String fileHash) {
         try {
             if (file.isEmpty()) {
                 throw new BusinessException(CommonCodeMsg.IS_EMPTY);
@@ -92,7 +69,6 @@ public class ChunkUploadService {
             if (isComplete) {
                 mergeChunks(fileHash, totalChunks, novelId, chapterId);
                 chunkUploadTracker.remove(fileHash); // 上传完删除记录
-                addToBloomFilter(novelId, chapterId, (long) chunkNum);
             }
             return true;
         } catch (IOException e) {
@@ -119,8 +95,7 @@ public class ChunkUploadService {
     }
 
     private void processCompletedFile(Path desFile, Long novelId, Long chapterId) throws IOException {
-        try (FileInputStream fis = new FileInputStream(desFile.toFile());
-             XWPFDocument doc = new XWPFDocument(fis)) {
+        try (FileInputStream fis = new FileInputStream(desFile.toFile()); XWPFDocument doc = new XWPFDocument(fis)) {
             int currentNum = 0;
             StringBuilder sb = new StringBuilder();
 
@@ -176,5 +151,4 @@ public class ChunkUploadService {
             }
         }
     }
-
 }
