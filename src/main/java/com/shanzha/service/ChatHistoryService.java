@@ -3,16 +3,14 @@ package com.shanzha.service;
 import com.shanzha.domain.constants.ChatConstants;
 import com.shanzha.service.dto.ChatItemVo;
 import com.shanzha.service.dto.ChatSessionItemVo;
-
 import com.shanzha.service.dto.UserAiHistoryDTO;
+import com.shanzha.utils.JsonUtil;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import com.shanzha.utils.JsonUtil;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class ChatHistoryService {
@@ -26,7 +24,9 @@ public class ChatHistoryService {
     public List<ChatSessionItemVo> listChatSessions(Long userId) {
         String key = ChatConstants.getAiChatListKey(userId);
         Map<Object, Object> raw = redisTemplate.opsForHash().entries(key);
-        return raw.values().stream()
+        return raw
+            .values()
+            .stream()
             .map(v -> JsonUtil.toObj((String) v, ChatSessionItemVo.class))
             .sorted(Comparator.comparing(ChatSessionItemVo::getUpdateTime).reversed())
             .collect(Collectors.toList());
@@ -37,18 +37,18 @@ public class ChatHistoryService {
         String key = getChatIdKey(userId, chatId);
         List<String> raw = redisTemplate.opsForList().range(key, 0, size);
 
-        return raw == null ? new ArrayList<>() : raw.stream()
-            .map(item -> JsonUtil.toObj(item, ChatItemVo.class))
-            .collect(Collectors.toList());
+        return raw == null
+            ? new ArrayList<>()
+            : raw.stream().map(item -> JsonUtil.toObj(item, ChatItemVo.class)).collect(Collectors.toList());
     }
 
-    public void pushChatItem(Long user, ChatItemVo item) {
+    public Long pushChatItem(Long user, ChatItemVo item) {
         UserAiHistoryDTO userAiHistoryDTO = new UserAiHistoryDTO();
         userAiHistoryDTO.setUserId(user);
         userAiHistoryDTO.setQuestion(item.getQuestion());
         userAiHistoryDTO.setAnswer(item.getAnswer());
         userAiHistoryDTO.setChatId("");
-        userAiHistoryService.save(userAiHistoryDTO);
+        return userAiHistoryService.save(userAiHistoryDTO).getId();
     }
 
     public void saveRecord(Long userId, String chatId, ChatItemVo item) {
@@ -65,9 +65,11 @@ public class ChatHistoryService {
         if (session == null) {
             session = new ChatSessionItemVo();
             session.setChatId(chatId);
-            session.setTitle(item.getQuestion().startsWith(ChatConstants.PROMPT_TAG)
-                ? item.getQuestion().substring(ChatConstants.PROMPT_TAG.length())
-                : item.getQuestion());
+            session.setTitle(
+                item.getQuestion().startsWith(ChatConstants.PROMPT_TAG)
+                    ? item.getQuestion().substring(ChatConstants.PROMPT_TAG.length())
+                    : item.getQuestion()
+            );
             session.setCreatTime(System.currentTimeMillis());
             session.setUpdateTime(session.getCreatTime());
             session.setQasCnt(1);

@@ -24,10 +24,6 @@
             <span>首页</span>
           </span>
         </b-nav-item>
-        <b-nav-item to="/coupons" v-if="authenticated">
-          <font-awesome-icon icon="gift" />
-          <span>我的优惠券</span>
-        </b-nav-item>
         <b-nav-item to="/novel" v-if="authenticated">
           <font-awesome-icon icon="upload" />
           <span>上传小说</span>

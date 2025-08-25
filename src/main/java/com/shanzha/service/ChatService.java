@@ -6,9 +6,11 @@ import com.shanzha.domain.constants.ChatConstants;
 import com.shanzha.domain.enumeration.AiChatStatEnum;
 import com.shanzha.domain.enumeration.ChatAnswerTypeEnum;
 import com.shanzha.security.SecurityUtils;
+import com.shanzha.service.UserAiHistoryService;
 import com.shanzha.service.dto.ChatItemVo;
 import com.shanzha.service.dto.ChatRecordsVo;
 import com.shanzha.service.dto.ChatSessionItemVo;
+import jakarta.annotation.Resource;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +38,7 @@ public class ChatService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
+    @Resource
     UserAiHistoryService userAiHistoryService;
 
     @Autowired
@@ -266,14 +269,12 @@ public class ChatService {
     }
 
     public void saveRecord(Long userId, String chatId, ChatItemVo item) {
-        // 写入 MySQL
-        chatHistoryService.pushChatItem(userId, item);
-
-        // Redis key 构造
+        Long recordId = null;
         String key = getChatIdKey(userId, chatId);
         String sessionKey = ChatConstants.getAiChatListKey(userId);
-
         try {
+            recordId = chatHistoryService.pushChatItem(userId, item);
+
             // 将 item 序列化为 JSON 并 lpush 到记录列表中
             String itemJson = objectMapper.writeValueAsString(item);
             redisTemplate.execute(
@@ -327,8 +328,11 @@ public class ChatService {
                 );
             }
         } catch (Exception e) {
-            // 记录异常
             log.error("Failed to save chat record to Redis", e);
+            if (recordId != null) {
+                userAiHistoryService.delete(recordId);
+            }
+            throw new RuntimeException("Chat record persistence failed", e);
         }
     }
 
