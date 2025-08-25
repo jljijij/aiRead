@@ -1,15 +1,17 @@
 package com.shanzha.utils;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * @author zhoubin
@@ -57,40 +59,74 @@ public class JsonUtil {
      * 因为js中得数字类型不能包含所有的java long值
      */
     public static com.fasterxml.jackson.databind.Module bigIntToStrsimpleModule() {
-        SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addSerializer(Long.class, newSerializer(s -> String.valueOf(s)));
-        simpleModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
-        simpleModule.addSerializer(long[].class, newSerializer((Function<Long, String>) String::valueOf));
-        simpleModule.addSerializer(Long[].class, newSerializer((Function<Long, String>) String::valueOf));
-        simpleModule.addSerializer(BigDecimal.class, newSerializer(BigDecimal::toString));
-        simpleModule.addSerializer(BigDecimal[].class, newSerializer(BigDecimal::toString));
-        simpleModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
-        simpleModule.addSerializer(BigInteger[].class, newSerializer((Function<BigInteger, String>) BigInteger::toString));
-        return simpleModule;
+        SimpleModule module = new SimpleModule();
+
+        // Long 类型及其原始类型
+        JsonSerializer<Long> longSerializer = stringSerializer(String::valueOf);
+        module.addSerializer(Long.class, longSerializer);
+        module.addSerializer(Long.TYPE, longSerializer);
+        module.addSerializer(Long[].class, arraySerializer(String::valueOf));
+        module.addSerializer(
+            long[].class,
+            new JsonSerializer<long[]>() {
+                @Override
+                public void serialize(long[] value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                    if (value == null) {
+                        gen.writeNull();
+                        return;
+                    }
+                    gen.writeStartArray();
+                    for (long l : value) {
+                        gen.writeString(String.valueOf(l));
+                    }
+                    gen.writeEndArray();
+                }
+            }
+        );
+
+        // BigDecimal
+        JsonSerializer<BigDecimal> bigDecimalSerializer = stringSerializer(BigDecimal::toString);
+        module.addSerializer(BigDecimal.class, bigDecimalSerializer);
+        module.addSerializer(BigDecimal[].class, arraySerializer(BigDecimal::toString));
+
+        // BigInteger
+        JsonSerializer<BigInteger> bigIntegerSerializer = stringSerializer(BigInteger::toString);
+        module.addSerializer(BigInteger.class, bigIntegerSerializer);
+        module.addSerializer(BigInteger[].class, arraySerializer(BigInteger::toString));
+
+        return module;
     }
 
-    public static <T, K> JsonSerializer<T> newSerializer(Function<K, String> func) {
+    private static <T> JsonSerializer<T> stringSerializer(Function<T, String> func) {
         return new JsonSerializer<T>() {
             @Override
-            public void serialize(T t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
-                if (t == null) {
-                    jsonGenerator.writeNull();
+            public void serialize(T value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                if (value == null) {
+                    gen.writeNull();
+                } else {
+                    gen.writeString(func.apply(value));
+                }
+            }
+        };
+    }
+
+    private static <T> JsonSerializer<T[]> arraySerializer(Function<T, String> func) {
+        return new JsonSerializer<T[]>() {
+            @Override
+            public void serialize(T[] value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                if (value == null) {
+                    gen.writeNull();
                     return;
                 }
-
-                if (t.getClass().isArray()) {
-                    jsonGenerator.writeStartArray();
-                    Stream.of(t).forEach(s -> {
-                        try {
-                            jsonGenerator.writeString(func.apply((K) s));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                    jsonGenerator.writeEndArray();
-                } else {
-                    jsonGenerator.writeString(func.apply((K) t));
+                gen.writeStartArray();
+                for (T t : value) {
+                    if (t == null) {
+                        gen.writeNull();
+                    } else {
+                        gen.writeString(func.apply(t));
+                    }
                 }
+                gen.writeEndArray();
             }
         };
     }

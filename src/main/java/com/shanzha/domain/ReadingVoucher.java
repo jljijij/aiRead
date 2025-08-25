@@ -37,6 +37,10 @@ public class ReadingVoucher implements Serializable {
     @Column(name = "file_content_type")
     private String fileContentType;
 
+    @Version
+    @Column(name = "version", nullable = false)
+    private Long version;
+
     public Long getId() {
         return id;
     }
@@ -91,6 +95,14 @@ public class ReadingVoucher implements Serializable {
 
     public void setFileContentType(String fileContentType) {
         this.fileContentType = fileContentType;
+    }
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
     }
 
     @Override
