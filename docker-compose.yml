@@ -15,7 +15,7 @@ services:
       - redis
 
   mysql:
-    image: mysql:8.0
+    image: docker.1ms.run/mysql:8.0
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: aiRead
@@ -26,7 +26,7 @@ services:
       - mysql-data:/var/lib/mysql
 
   redis:
-    image: redis:7
+    image: docker.1ms.run/redis:7
     restart: unless-stopped
     ports:
       - '6379:6379'
