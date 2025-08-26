@@ -211,6 +211,18 @@ For more information, refer to the [Code quality page][].
 
 JHipster generates a number of Docker Compose configuration files in the [src/main/docker/](src/main/docker/) folder to launch required third party services.
 
+#### One-click deployment
+
+This project also provides a top-level `docker-compose.yml` for quickly bringing up the full stack. Images are pulled from the `docker.1ms.run` mirror and the application image is built using the Aliyun Maven mirror defined in [.mvn/settings.xml](.mvn/settings.xml).
+
+To build and start all services, run:
+
+```bash
+docker compose up -d
+```
+
+The first execution builds the application image and then starts the app, MySQL and Redis containers. Subsequent runs reuse the built image.
+
 For example, to start required services in Docker containers, run:
 
 ```
@@ -228,7 +240,7 @@ docker compose -f src/main/docker/services.yml down
 ```yaml
 spring:
   ...
-  
+
     compose:
       enabled: false
 ```
