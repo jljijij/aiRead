@@ -1,5 +1,6 @@
 package com.shanzha.domain;
 
+import com.shanzha.domain.enumeration.CouponType;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.time.Instant;
@@ -36,6 +37,19 @@ public class ReadingVoucher implements Serializable {
 
     @Column(name = "file_content_type")
     private String fileContentType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    private CouponType type;
+
+    @Column(name = "novel_id")
+    private Long novelId;
+
+    @Column(name = "chapter_id")
+    private Long chapterId;
+
+    @Column(name = "package_id")
+    private Long packageId;
 
     @Version
     @Column(name = "version", nullable = false)
@@ -97,6 +111,38 @@ public class ReadingVoucher implements Serializable {
         this.fileContentType = fileContentType;
     }
 
+    public CouponType getType() {
+        return type;
+    }
+
+    public void setType(CouponType type) {
+        this.type = type;
+    }
+
+    public Long getNovelId() {
+        return novelId;
+    }
+
+    public void setNovelId(Long novelId) {
+        this.novelId = novelId;
+    }
+
+    public Long getChapterId() {
+        return chapterId;
+    }
+
+    public void setChapterId(Long chapterId) {
+        this.chapterId = chapterId;
+    }
+
+    public Long getPackageId() {
+        return packageId;
+    }
+
+    public void setPackageId(Long packageId) {
+        this.packageId = packageId;
+    }
+
     public Long getVersion() {
         return version;
     }
@@ -134,6 +180,15 @@ public class ReadingVoucher implements Serializable {
             ", claimedBy='" +
             claimedBy +
             '\'' +
+            ", type='" +
+            type +
+            '\'' +
+            ", novelId=" +
+            novelId +
+            ", chapterId=" +
+            chapterId +
+            ", packageId=" +
+            packageId +
             "}"
         );
     }

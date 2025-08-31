@@ -1,6 +1,7 @@
 package com.shanzha.web.rest;
 
 import com.shanzha.domain.ReadingVoucher;
+import com.shanzha.domain.enumeration.CouponType;
 import com.shanzha.service.ReadingVoucherService;
 import java.io.IOException;
 import java.security.Principal;
@@ -28,9 +29,15 @@ public class ReadingVoucherResource {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<ReadingVoucher> upload(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<ReadingVoucher> upload(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("type") CouponType type,
+        @RequestParam(value = "novelId", required = false) Long novelId,
+        @RequestParam(value = "chapterId", required = false) Long chapterId,
+        @RequestParam(value = "packageId", required = false) Long packageId
+    ) throws IOException {
         LOG.debug("REST request to upload file : {}", file.getOriginalFilename());
-        ReadingVoucher result = readingVoucherService.saveWithFile(file);
+        ReadingVoucher result = readingVoucherService.saveWithFile(file, type, novelId, chapterId, packageId);
         return ResponseEntity.ok(result);
     }
 
