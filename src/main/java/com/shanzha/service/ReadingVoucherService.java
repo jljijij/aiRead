@@ -1,6 +1,7 @@
 package com.shanzha.service;
 
 import com.shanzha.domain.ReadingVoucher;
+import com.shanzha.domain.enumeration.CouponType;
 import com.shanzha.repository.ReadingVoucherRepository;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -53,11 +54,16 @@ public class ReadingVoucherService {
         claimScript.setResultType(Long.class);
     }
 
-    public ReadingVoucher saveWithFile(MultipartFile file) throws IOException {
+    public ReadingVoucher saveWithFile(MultipartFile file, CouponType type, Long novelId, Long chapterId, Long packageId)
+        throws IOException {
         ReadingVoucher voucher = new ReadingVoucher();
         voucher.setCode(UUID.randomUUID().toString());
         voucher.setIssuedAt(Instant.now());
         voucher.setExpiresAt(Instant.now().plus(1, ChronoUnit.DAYS));
+        voucher.setType(type);
+        voucher.setNovelId(novelId);
+        voucher.setChapterId(chapterId);
+        voucher.setPackageId(packageId);
         voucher.setFile(file.getBytes());
         voucher.setFileContentType(file.getContentType());
         return readingVoucherRepository.save(voucher);
@@ -89,10 +95,18 @@ public class ReadingVoucherService {
 
     @Scheduled(fixedRate = 86_400_000)
     public void issuePeriodicVoucher() {
+        issuePeriodicVoucher(null, null, null, null);
+    }
+
+    public void issuePeriodicVoucher(CouponType type, Long novelId, Long chapterId, Long packageId) {
         ReadingVoucher voucher = new ReadingVoucher();
         voucher.setCode(UUID.randomUUID().toString());
         voucher.setIssuedAt(Instant.now());
         voucher.setExpiresAt(Instant.now().plus(1, ChronoUnit.DAYS));
+        voucher.setType(type);
+        voucher.setNovelId(novelId);
+        voucher.setChapterId(chapterId);
+        voucher.setPackageId(packageId);
         readingVoucherRepository.save(voucher);
     }
 

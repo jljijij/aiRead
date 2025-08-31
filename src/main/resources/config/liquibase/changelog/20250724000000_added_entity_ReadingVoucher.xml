@@ -22,6 +22,10 @@
             <column name="claimed_by" type="varchar(255)"/>
             <column name="file" type="${blobType}"/>
             <column name="file_content_type" type="varchar(255)"/>
+            <column name="type" type="varchar(255)"/>
+            <column name="novel_id" type="bigint"/>
+            <column name="chapter_id" type="bigint"/>
+            <column name="package_id" type="bigint"/>
             <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
         </createTable>
     </changeSet>

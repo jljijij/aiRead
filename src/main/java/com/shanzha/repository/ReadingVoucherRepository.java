@@ -1,6 +1,7 @@
 package com.shanzha.repository;
 
 import com.shanzha.domain.ReadingVoucher;
+import com.shanzha.domain.enumeration.CouponType;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -19,4 +20,11 @@ public interface ReadingVoucherRepository extends JpaRepository<ReadingVoucher, 
     List<ReadingVoucher> findByClaimedByIsNull();
 
     List<ReadingVoucher> findByClaimedBy(String claimedBy);
+
+    List<ReadingVoucher> findByTypeAndNovelIdAndChapterIdAndPackageIdAndClaimedByIsNull(
+        CouponType type,
+        Long novelId,
+        Long chapterId,
+        Long packageId
+    );
 }
